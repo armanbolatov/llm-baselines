@@ -32,7 +32,7 @@ from optim.lion_muon import LionMuon, LionMuonScheduler
 from optim.prodigy import Prodigy
 from optim.rmsspectral import RMSspectral
 from optim.schedule import (cos_inf_schedule, cosine_wsd_decay_schedule,
-                            dd_schedule, wsd_schedule)
+                            dd_schedule, wsd_schedule, wsm_schedule)
 from optim.schedulefree import AdamWScheduleFree, SGDScheduleFree
 from optim.sgdf import SGDF
 from optim.shampoo import DistributedShampoo
@@ -539,6 +539,20 @@ def main(args, parser):
                 init_div_factor=1e2,
                 final_lr_factor=args.wsd_final_lr_scale,  # should be 0 here
                 decay_type=args.decay_type,
+            )
+            scheduler = (
+                torch.optim.lr_scheduler.LambdaLR(opt, lambda_schedule)
+                if args.opt not in ("muon", "sign_muon", "lion_muon")
+                else (
+                    LionMuonScheduler(opt, args) if args.opt == "lion_muon" else
+                    (SignMuonScheduler(opt, args) if args.opt == "sign_muon" else CombinedScheduler(opt, args))
+                )
+            )
+        elif args.scheduler == "wsm":
+            lambda_schedule = wsm_schedule(
+                n_iterations=args.iterations,
+                n_warmup=args.warmup_steps,
+                init_div_factor=1e2,
             )
             scheduler = (
                 torch.optim.lr_scheduler.LambdaLR(opt, lambda_schedule)

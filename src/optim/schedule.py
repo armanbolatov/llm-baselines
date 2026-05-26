@@ -34,6 +34,18 @@ def cos_inf_schedule(n_iterations, n_warmup, div_factor, final_div_factor, n_inf
     return schedule
 
 
+def wsm_schedule(n_iterations, n_warmup=1000, init_div_factor=100):
+    """Warmup-Stable-Merge (arXiv:2507.17634): warmup then constant peak; no decay."""
+    del n_iterations
+
+    def schedule(step):
+        if step < n_warmup:
+            return (step / n_warmup) + (1 - step / n_warmup) / init_div_factor
+        return 1.0
+
+    return schedule
+
+
 def wsd_schedule(
     n_iterations,
     final_lr_factor=0.0,
