@@ -15,11 +15,13 @@
 
 set -e
 export OMP_NUM_THREADS=1
+export TORCHDYNAMO_DISABLE=1   # avoid Triton/gcc compile failure on this host
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 source "$SCRIPT_DIR/common_config.sh"
+DATASETS_DIR=/home/shared/datasets
 
 PYTHON=${PYTHON:-python}
 GPU_ID="${1:-0}"
@@ -41,6 +43,7 @@ COMMON_ARGS="--dataset $DATASET --datasets_dir $DATASETS_DIR \
   --n_layer $N_LAYER --n_head $N_HEAD --n_embd $N_EMBD \
   --device $DEVICE --weight_decay $WEIGHT_DECAY --grad_clip $GRAD_CLIP \
   --scheduler wsm --permanent_ckpt_interval $WSM_CKPT_INTERVAL \
+  --keep_last_n_permanent_ckpts $((N_MERGE + 1)) \
   --results_base_folder ./exps --tensorboard"
 
 run_one() {
@@ -61,7 +64,46 @@ run_one "lionmuon_k2" \
   --opt lion_muon --lr $LM_ADAMW_LR --muon_lr_factor $LM_K2_LR \
   --sign_lr $LM_K2_SLR --muon_every_k 2 --beta1 $LM_BETA1 --beta2 $LM_BETA2
 
-# 2) Merge the last N permanent checkpoints three ways.
+# 2) WSD finetune: branch from iter $RESUME_ITER of the WSM run and apply
+#    linear decay over the last 10% of training. Saves ~90% of compute vs
+#    a full WSD baseline because the warmup+stable backbone is shared.
+RESUME_ITER=$((ITERATIONS - WSM_CKPT_INTERVAL * N_MERGE))   # 64000 - 1600*4 = 57600
+
+WSD_COMMON_ARGS="--dataset $DATASET --datasets_dir $DATASETS_DIR \
+  --model base --batch_size $BATCH_SIZE --acc_steps $ACC_STEPS \
+  --iterations $ITERATIONS --warmup_steps $WARMUP \
+  --eval_interval $EVAL_INTERVAL --sequence_length $SEQ_LEN \
+  --n_layer $N_LAYER --n_head $N_HEAD --n_embd $N_EMBD \
+  --device $DEVICE --weight_decay $WEIGHT_DECAY --grad_clip $GRAD_CLIP \
+  --scheduler wsd --wsd_fract_decay 0.1 --wsd_final_lr_scale 0.0 --decay_type linear \
+  --permanent_ckpt_interval $ITERATIONS \
+  --results_base_folder ./exps --tensorboard"
+
+run_wsd_finetune() {
+  local name="$1"; shift
+  local wsm_exp="fw_base_${name}_wsm"
+  local wsd_exp="fw_base_${name}_wsd"
+  local resume="./exps/${wsm_exp}/ckpts/${RESUME_ITER}"
+  if [ -f "./exps/${wsd_exp}/summary.json" ]; then
+    echo "[SKIP] ${wsd_exp}"; return 0
+  fi
+  if [ ! -f "${resume}/main.pt" ]; then
+    echo "[ERROR] missing ${resume}/main.pt -- skipping WSD for ${name}"
+    return 0
+  fi
+  echo "[RUN ] ${wsd_exp} (resume from ${wsm_exp} iter ${RESUME_ITER})"
+  $PYTHON ./src/main.py $WSD_COMMON_ARGS --experiment_name "$wsd_exp" \
+    --resume_from "$resume" "$@"
+}
+
+run_wsd_finetune "adamw" \
+  --opt adamw --lr $ADAMW_LR --beta1 $ADAMW_BETA1 --beta2 $ADAMW_BETA2
+
+run_wsd_finetune "lionmuon_k2" \
+  --opt lion_muon --lr $LM_ADAMW_LR --muon_lr_factor $LM_K2_LR \
+  --sign_lr $LM_K2_SLR --muon_every_k 2 --beta1 $LM_BETA1 --beta2 $LM_BETA2
+
+# 3) Merge the last N permanent WSM ckpts three ways.
 for NAME in adamw lionmuon_k2; do
   EXP="exps/fw_base_${NAME}_wsm"
   for METHOD in mean ema theorem; do
@@ -69,18 +111,20 @@ for NAME in adamw lionmuon_k2; do
   done
 done
 
-# 3) Evaluate every WSM checkpoint (+ merged variants) on full val set.
+# 4) Evaluate WSD final + merged WSM variants on full val set.
 EVAL_ARGS="--config_format base --dataset $DATASET --datasets_dir $DATASETS_DIR \
   --model base --batch_size $BATCH_SIZE --sequence_length $SEQ_LEN \
-  --n_layer $N_LAYER --n_head $N_HEAD --n_embd $N_EMBD --device $DEVICE --eval_full"
+  --n_layer $N_LAYER --n_head $N_HEAD --n_embd $N_EMBD --device $DEVICE"
 
 CKPTS=()
 for NAME in adamw lionmuon_k2; do
-  EXP="exps/fw_base_${NAME}_wsm"
-  CKPTS+=("$EXP/ckpts/latest/main.pt")
-  CKPTS+=("$EXP/ckpts/merged_mean_n${N_MERGE}/main.pt")
-  CKPTS+=("$EXP/ckpts/merged_ema0.5_n${N_MERGE}/main.pt")
-  CKPTS+=("$EXP/ckpts/merged_theorem_n${N_MERGE}/main.pt")
+  EXP_WSM="exps/fw_base_${NAME}_wsm"
+  EXP_WSD="exps/fw_base_${NAME}_wsd"
+  CKPTS+=("$EXP_WSD/ckpts/${ITERATIONS}/main.pt")
+  CKPTS+=("$EXP_WSM/ckpts/${ITERATIONS}/main.pt")
+  CKPTS+=("$EXP_WSM/ckpts/merged_mean_n${N_MERGE}/main.pt")
+  CKPTS+=("$EXP_WSM/ckpts/merged_ema0.5_n${N_MERGE}/main.pt")
+  CKPTS+=("$EXP_WSM/ckpts/merged_theorem_n${N_MERGE}/main.pt")
 done
 EXISTING=(); for c in "${CKPTS[@]}"; do [ -f "$c" ] && EXISTING+=("$c"); done
 

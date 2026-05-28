@@ -1,4 +1,5 @@
 import math
+import shutil
 import time
 from contextlib import nullcontext
 from pathlib import Path
@@ -79,6 +80,15 @@ def train(
                 ckpt_dir = exp_dir / "ckpts" / str(curr_iter)
                 if distributed_backend.is_master_process():
                     save_checkpoint(model, opt, scheduler, curr_iter, ckpt_dir)
+                    keep = getattr(cfg, "keep_last_n_permanent_ckpts", 0)
+                    if keep > 0:
+                        existing = sorted(
+                            (d for d in (exp_dir / "ckpts").iterdir()
+                             if d.is_dir() and d.name.isdigit()),
+                            key=lambda d: int(d.name),
+                        )
+                        for old in existing[:-keep]:
+                            shutil.rmtree(old, ignore_errors=True)
                 save_worker_state(ckpt_dir)
 
         # Save temporary checkpoint for resuming training

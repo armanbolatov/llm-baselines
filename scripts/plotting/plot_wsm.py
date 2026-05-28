@@ -48,11 +48,23 @@ def load_curve(exp_dir):
     val_loss = d.get("val_loss") or []
     if not val_loss:
         return None
-    eval_interval = (d.get("args") or {}).get("eval_interval", 500)
-    return {
-        "iters": [i * eval_interval for i in range(len(val_loss))],
-        "losses": val_loss,
-    }
+    args = d.get("args") or {}
+    eval_interval = args.get("eval_interval", 500)
+    n_iter = args.get("iterations", len(val_loss) * eval_interval)
+    # Detect resumed runs (WSD finetune): val_loss starts at the first
+    # eval-aligned iter AFTER the resume point, not at iter 0.
+    resume_from = args.get("resume_from")
+    start = 0
+    if resume_from:
+        leaf = os.path.basename(str(resume_from).rstrip("/"))
+        if leaf.isdigit():
+            r = int(leaf)
+            start = ((r + eval_interval - 1) // eval_interval) * eval_interval
+    iters = list(range(start, start + len(val_loss) * eval_interval, eval_interval))
+    # Clamp the last point to n_iterations if eval-at-final triggered.
+    if iters and iters[-1] != n_iter and abs(iters[-1] - n_iter) < eval_interval:
+        iters[-1] = n_iter
+    return {"iters": iters, "losses": val_loss}
 
 
 def load_merge_eval(opt):
@@ -78,8 +90,9 @@ def load_merge_eval(opt):
 def plot_one(opt, ax=None):
     cos = load_curve(os.path.join(EXPS_DIR, f"fw_base_{opt}"))
     wsm = load_curve(os.path.join(EXPS_DIR, f"fw_base_{opt}_wsm"))
-    if cos is None and wsm is None:
-        print(f"[skip] {opt}: no summary.json under exps/fw_base_{opt}[_wsm]")
+    wsd = load_curve(os.path.join(EXPS_DIR, f"fw_base_{opt}_wsd"))
+    if cos is None and wsm is None and wsd is None:
+        print(f"[skip] {opt}: no summary.json under exps/fw_base_{opt}[_wsm|_wsd]")
         return False
     merges = load_merge_eval(opt)
 
@@ -89,12 +102,16 @@ def plot_one(opt, ax=None):
 
     if cos is not None:
         ax.plot(cos["iters"], cos["losses"],
-                color="#1f4e8a", lw=2.0,
+                color="#7aa6d6", lw=1.8, alpha=0.8,
                 label=f"cos baseline (final={cos['losses'][-1]:.4f})")
     if wsm is not None:
         ax.plot(wsm["iters"], wsm["losses"],
                 color="#b8410e", lw=2.0,
                 label=f"WSM (final={wsm['losses'][-1]:.4f})")
+    if wsd is not None:
+        ax.plot(wsd["iters"], wsd["losses"],
+                color="#1f4e8a", lw=2.2,
+                label=f"WSD decay (final={wsd['losses'][-1]:.4f})")
 
     if merges and (wsm or cos):
         x_end = (wsm or cos)["iters"][-1]
@@ -107,7 +124,7 @@ def plot_one(opt, ax=None):
                        zorder=5, edgecolor="black", linewidths=0.6,
                        label=f"WSM-merge {s['name']} = {loss:.4f}")
 
-    y_min = min(min(c["losses"]) for c in (cos, wsm) if c is not None)
+    y_min = min(min(c["losses"]) for c in (cos, wsm, wsd) if c is not None)
     ax.set_ylim(max(1e-6, y_min * 0.97), 4.5)
     ax.set_yscale("log")
     ax.set_xlabel("Iteration", fontsize=12)
@@ -125,10 +142,13 @@ def plot_one(opt, ax=None):
         print(f"Plot saved to {out}")
 
         # Numerical summary.
-        print(f"\n{LABELS[opt]} — final val_loss:")
+        print(f"\n{LABELS[opt]} -- final val_loss:")
         if cos is not None:
             print(f"  {'cos baseline':<22s} {cos['losses'][-1]:.4f}  "
                   f"(pp={math.exp(min(cos['losses'][-1],80)):.2f})")
+        if wsd is not None:
+            print(f"  {'WSD (decay)':<22s} {wsd['losses'][-1]:.4f}  "
+                  f"(pp={math.exp(min(wsd['losses'][-1],80)):.2f})")
         if wsm is not None:
             print(f"  {'WSM (no merge)':<22s} {wsm['losses'][-1]:.4f}  "
                   f"(pp={math.exp(min(wsm['losses'][-1],80)):.2f})")
