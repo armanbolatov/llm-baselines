@@ -31,6 +31,7 @@ def parse_args(base_parser, args, namespace):
     # Checkpointing
     parser.add_argument("--results_base_folder", default="./exps", type=str)
     parser.add_argument("--permanent_ckpt_interval", default=0, type=int)
+    parser.add_argument("--permanent_ckpt_start", default=0, type=int)
     parser.add_argument("--keep_last_n_permanent_ckpts", default=0, type=int)
     parser.add_argument("--latest_ckpt_interval", default=0, type=int)
     parser.add_argument("--resume_from", default=None, type=str)

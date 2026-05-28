@@ -27,8 +27,12 @@ PYTHON=${PYTHON:-python}
 GPU_ID="${1:-0}"
 DEVICE="cuda:${GPU_ID}"
 DATASET="${DATASET:-fineweb}"
-N_MERGE="${N_MERGE:-4}"
+N_MERGE="${N_MERGE:-5}"
 WSM_CKPT_INTERVAL=1600
+# Save N_MERGE ckpts spanning the last 10% of training -- the SAME iter range
+# WSD decays through. With N_MERGE=5 and interval 1600, saves at iters
+# {57600, 59200, 60800, 62400, 64000}; merge_wsm.py --n 5 then merges all 5.
+WSM_CKPT_START=$((ITERATIONS - WSM_CKPT_INTERVAL * (N_MERGE - 1)))   # 57600
 
 # Hyperparameters copied verbatim from scripts/train_baselines.sh so the
 # WSM runs are directly comparable to the existing cos-scheduled runs.
@@ -42,7 +46,9 @@ COMMON_ARGS="--dataset $DATASET --datasets_dir $DATASETS_DIR \
   --eval_interval $EVAL_INTERVAL --sequence_length $SEQ_LEN \
   --n_layer $N_LAYER --n_head $N_HEAD --n_embd $N_EMBD \
   --device $DEVICE --weight_decay $WEIGHT_DECAY --grad_clip $GRAD_CLIP \
-  --scheduler wsm --permanent_ckpt_interval $WSM_CKPT_INTERVAL \
+  --scheduler wsm \
+  --permanent_ckpt_interval $WSM_CKPT_INTERVAL \
+  --permanent_ckpt_start $WSM_CKPT_START \
   --keep_last_n_permanent_ckpts $((N_MERGE + 1)) \
   --results_base_folder ./exps --tensorboard"
 
