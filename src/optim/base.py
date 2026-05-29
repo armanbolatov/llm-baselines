@@ -52,6 +52,15 @@ def train(
             cfg.device,
         )
         load_worker_state(ckpt_dir)
+        # If the saved scheduler state was empty (e.g., the ckpt was saved by
+        # a {Lion,Sign}Muon/Combined scheduler that didn't know about cfg.scheduler
+        # at save time), fast-forward the freshly-built scheduler so the next
+        # scheduler.step() advances to curr_iter+1 instead of restarting warmup.
+        if scheduler is not None:
+            inner = getattr(scheduler, "schedulers", None) or [scheduler]
+            for s in inner:
+                if hasattr(s, "last_epoch") and s.last_epoch < curr_iter:
+                    s.last_epoch = curr_iter
     else:
         curr_iter = 0
 

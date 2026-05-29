@@ -8,7 +8,8 @@ import os
 import torch
 import torch.distributed as dist
 
-from .schedule import cos_inf_schedule, cosine_wsd_decay_schedule, wsd_schedule
+from .schedule import (cos_inf_schedule, cosine_wsd_decay_schedule,
+                       wsd_schedule, wsm_schedule)
 
 
 @torch.compile
@@ -288,6 +289,14 @@ class CombinedScheduler:
 
         scheduler_map = {
             "cos": _make_cos_scheduler,
+            "wsm": lambda opt, lr: torch.optim.lr_scheduler.LambdaLR(
+                opt,
+                wsm_schedule(
+                    n_iterations=cfg.iterations,
+                    n_warmup=cfg.warmup_steps,
+                    init_div_factor=1e2,
+                ),
+            ),
             "cos_inf": lambda opt, lr: torch.optim.lr_scheduler.LambdaLR(
                 opt,
                 cos_inf_schedule(
@@ -345,4 +354,6 @@ class CombinedScheduler:
 
     def load_state_dict(self, state_dict):
         for i, scheduler in enumerate(self.schedulers):
-            scheduler.load_state_dict(state_dict[f"scheduler_{i}"])
+            key = f"scheduler_{i}"
+            if key in state_dict:
+                scheduler.load_state_dict(state_dict[key])

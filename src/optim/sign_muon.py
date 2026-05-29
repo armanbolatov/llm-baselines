@@ -22,7 +22,8 @@ import torch
 import torch.distributed as dist
 
 from .muon import zeropower_via_newtonschulz5
-from .schedule import cos_inf_schedule, cosine_wsd_decay_schedule, wsd_schedule
+from .schedule import (cos_inf_schedule, cosine_wsd_decay_schedule,
+                       wsd_schedule, wsm_schedule)
 from .utils import srank_wants_muon
 
 
@@ -296,6 +297,14 @@ class SignMuonScheduler:
 
         scheduler_map = {
             "cos": _make_cos_scheduler,
+            "wsm": lambda opt, lr: torch.optim.lr_scheduler.LambdaLR(
+                opt,
+                wsm_schedule(
+                    n_iterations=cfg.iterations,
+                    n_warmup=cfg.warmup_steps,
+                    init_div_factor=1e2,
+                ),
+            ),
             "wsd": lambda opt, lr: torch.optim.lr_scheduler.LambdaLR(
                 opt,
                 wsd_schedule(
@@ -344,4 +353,6 @@ class SignMuonScheduler:
 
     def load_state_dict(self, state_dict):
         for i, s in enumerate(self.schedulers):
-            s.load_state_dict(state_dict[f"scheduler_{i}"])
+            key = f"scheduler_{i}"
+            if key in state_dict:
+                s.load_state_dict(state_dict[key])
