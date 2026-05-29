@@ -73,7 +73,7 @@ run_one "lionmuon_k2" \
 # 2) WSD finetune: branch from iter $RESUME_ITER of the WSM run and apply
 #    linear decay over the last 10% of training. Saves ~90% of compute vs
 #    a full WSD baseline because the warmup+stable backbone is shared.
-RESUME_ITER=$((ITERATIONS - WSM_CKPT_INTERVAL * N_MERGE))   # 64000 - 1600*4 = 57600
+RESUME_ITER=$WSM_CKPT_START   # 57600 -- earliest saved ckpt = start of WSD decay window
 
 WSD_COMMON_ARGS="--dataset $DATASET --datasets_dir $DATASETS_DIR \
   --model base --batch_size $BATCH_SIZE --acc_steps $ACC_STEPS \
