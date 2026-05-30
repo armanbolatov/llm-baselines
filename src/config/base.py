@@ -33,6 +33,8 @@ def parse_args(base_parser, args, namespace):
     parser.add_argument("--permanent_ckpt_interval", default=0, type=int)
     parser.add_argument("--permanent_ckpt_start", default=0, type=int)
     parser.add_argument("--keep_last_n_permanent_ckpts", default=0, type=int)
+    parser.add_argument("--online_merge_method", default="off",
+                        choices=["off", "mean", "ema", "theorem"])
     parser.add_argument("--latest_ckpt_interval", default=0, type=int)
     parser.add_argument("--resume_from", default=None, type=str)
     parser.add_argument("--resume_from_swa", default=None, type=str)

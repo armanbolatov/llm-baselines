@@ -7,6 +7,8 @@ from pathlib import Path
 import torch
 import yaml
 
+from .merge import get_weights
+
 # from logger.logger import DynamicsLogger
 from .utils import (eval, get_batch, load_checkpoint, load_worker_state,
                     save_checkpoint, save_worker_state)
@@ -82,6 +84,23 @@ def train(
     model.train()
     wall_t0 = time.time()
 
+    # Online merge: maintain a single fp32 buffer that incrementally
+    # accumulates c_j * theta_j at the same iters permanent ckpts would
+    # be saved. At the final save event, write the merged model to disk.
+    # Storage during training: 1 buffer (~500 MB for 124M) instead of N ckpts.
+    online_method = getattr(cfg, "online_merge_method", "off")
+    online_buf = None
+    online_idx = 0
+    online_iters = []
+    online_weights = []
+    if online_method != "off":
+        if cfg.permanent_ckpt_interval <= 0:
+            raise ValueError("--online_merge_method requires --permanent_ckpt_interval > 0")
+        n_saves = (cfg.iterations - cfg.permanent_ckpt_start) // cfg.permanent_ckpt_interval + 1
+        online_weights = get_weights(online_method, n_saves)
+        print(f"Online merge: method={online_method}  n_saves={n_saves}  "
+              f"weights={[round(w, 4) for w in online_weights]}")
+
     while curr_iter <= cfg.iterations:
         # Save permanent checkpoint
         if cfg.permanent_ckpt_interval > 0:
@@ -100,6 +119,33 @@ def train(
                         for old in existing[:-keep]:
                             shutil.rmtree(old, ignore_errors=True)
                 save_worker_state(ckpt_dir)
+
+                # Online merge: accumulate c_j * theta_j into the buffer.
+                if online_method != "off" and distributed_backend.is_master_process():
+                    m = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
+                    sd = m.state_dict()
+                    w = float(online_weights[online_idx])
+                    if online_buf is None:
+                        online_buf = {k: v.to(torch.float32) * w
+                                      for k, v in sd.items()
+                                      if torch.is_tensor(v) and v.is_floating_point()}
+                    else:
+                        for k, v in sd.items():
+                            if k in online_buf:
+                                online_buf[k].add_(v.to(torch.float32), alpha=w)
+                    online_iters.append(curr_iter)
+                    online_idx += 1
+                    if online_idx == len(online_weights):
+                        merged = {k: (online_buf[k].to(v.dtype) if k in online_buf
+                                      else (v.clone() if torch.is_tensor(v) else v))
+                                  for k, v in sd.items()}
+                        out = exp_dir / "ckpts" / f"merged_online_live_{online_method}" / "main.pt"
+                        out.parent.mkdir(parents=True, exist_ok=True)
+                        torch.save({"model": merged, "merge": {
+                            "method": "online_live", "base": online_method,
+                            "weights": online_weights, "iters": online_iters,
+                        }}, out)
+                        print(f"Online-merged ckpt written to {out}")
 
         # Save temporary checkpoint for resuming training
         if cfg.latest_ckpt_interval > 0:

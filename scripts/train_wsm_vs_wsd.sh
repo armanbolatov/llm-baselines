@@ -50,6 +50,7 @@ COMMON_ARGS="--dataset $DATASET --datasets_dir $DATASETS_DIR \
   --permanent_ckpt_interval $WSM_CKPT_INTERVAL \
   --permanent_ckpt_start $WSM_CKPT_START \
   --keep_last_n_permanent_ckpts $((N_MERGE + 1)) \
+  --online_merge_method theorem \
   --results_base_folder ./exps --tensorboard"
 
 run_one() {
@@ -109,11 +110,20 @@ run_wsd_finetune "lionmuon_k2" \
   --opt lion_muon --lr $LM_ADAMW_LR --muon_lr_factor $LM_K2_LR \
   --sign_lr $LM_K2_SLR --muon_every_k 2 --beta1 $LM_BETA1 --beta2 $LM_BETA2
 
-# 3) Merge the last N permanent WSM ckpts three ways.
+# 3) Merge the last N permanent WSM ckpts six ways:
+#    - mean / ema / theorem        (deterministic offline weighted average)
+#    - online                       (incremental, equivalent to theorem)
+#    - sampled K=1, 2, 3            (importance-sampled MC estimate of theorem)
 for NAME in adamw lionmuon_k2; do
   EXP="exps/fw_base_${NAME}_wsm"
   for METHOD in mean ema theorem; do
     $PYTHON ./src/merge_wsm.py --exp_dir "$EXP" --n "$N_MERGE" --method "$METHOD"
+  done
+  $PYTHON ./src/merge_wsm.py --exp_dir "$EXP" --n "$N_MERGE" \
+    --method online --base theorem
+  for K in 1 2 3; do
+    $PYTHON ./src/merge_wsm.py --exp_dir "$EXP" --n "$N_MERGE" \
+      --method sampled --base theorem --k $K --seed 0
   done
 done
 
@@ -131,6 +141,11 @@ for NAME in adamw lionmuon_k2; do
   CKPTS+=("$EXP_WSM/ckpts/merged_mean_n${N_MERGE}/main.pt")
   CKPTS+=("$EXP_WSM/ckpts/merged_ema0.5_n${N_MERGE}/main.pt")
   CKPTS+=("$EXP_WSM/ckpts/merged_theorem_n${N_MERGE}/main.pt")
+  CKPTS+=("$EXP_WSM/ckpts/merged_online_theorem/main.pt")
+  CKPTS+=("$EXP_WSM/ckpts/merged_online_live_theorem/main.pt")
+  for K in 1 2 3; do
+    CKPTS+=("$EXP_WSM/ckpts/merged_sampled_theorem_k${K}_s0/main.pt")
+  done
 done
 EXISTING=(); for c in "${CKPTS[@]}"; do [ -f "$c" ] && EXISTING+=("$c"); done
 

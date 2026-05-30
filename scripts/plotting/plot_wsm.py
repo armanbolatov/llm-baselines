@@ -33,9 +33,14 @@ OPTS = ["adamw", "lionmuon_k2"]
 LABELS = {"adamw": "AdamW", "lionmuon_k2": "LionMuon (P=2)"}
 
 MERGE_STYLE = {
-    "mean":    {"color": "#2c8a4f", "marker": "v", "name": "mean"},
-    "ema":     {"color": "#7a3fa0", "marker": "D", "name": "EMA (α=0.5)"},
-    "theorem": {"color": "#d4a017", "marker": "*", "name": "theorem (1−√t)"},
+    "mean":       {"color": "#2c8a4f", "marker": "v", "name": "mean"},
+    "ema":        {"color": "#7a3fa0", "marker": "D", "name": "EMA (α=0.5)"},
+    "theorem":    {"color": "#d4a017", "marker": "*", "name": "theorem (1−√t)"},
+    "online":     {"color": "#9c5d10", "marker": "X", "name": "online theorem (postproc)"},
+    "online_live":{"color": "#5f3a08", "marker": "P", "name": "online theorem (LIVE in training)"},
+    "sampled_k1": {"color": "#e98a6a", "marker": "o", "name": "sampled K=1"},
+    "sampled_k2": {"color": "#dd6644", "marker": "s", "name": "sampled K=2"},
+    "sampled_k3": {"color": "#bb3322", "marker": "p", "name": "sampled K=3"},
 }
 
 
@@ -67,8 +72,12 @@ def load_curve(exp_dir):
     return {"iters": iters, "losses": val_loss}
 
 
-def load_merge_eval(opt):
-    """Return {method: val_loss} for the given opt from the eval summary."""
+def load_full_eval(opt):
+    """All full-val-set eval results for an opt from wsm_fw_summary.json.
+
+    Returns a dict with keys among {'wsm_final', 'wsd_final', 'mean', 'ema',
+    'theorem'} mapped to val_loss.
+    """
     path = os.path.join(EXPS_DIR, "wsm_fw_summary.json")
     if not os.path.isfile(path):
         return {}
@@ -76,14 +85,20 @@ def load_merge_eval(opt):
         rows = json.load(f)
     out = {}
     for row in rows:
-        if f"fw_base_{opt}_wsm" not in row.get("ckpt", ""):
-            continue
+        ckpt = (row.get("ckpt") or "").replace("\\", "/")
+        loss = row.get("val_loss")
         meta = row.get("merge_meta")
-        if not meta:
-            continue
-        method = meta.get("method") or meta.get("merge_method")
-        if method in MERGE_STYLE:
-            out[method] = row.get("val_loss")
+        if meta:
+            method = meta.get("method") or meta.get("merge_method")
+            key = method
+            if method == "sampled":
+                key = f"sampled_k{meta.get('k')}"
+            if key in MERGE_STYLE and f"fw_base_{opt}_wsm" in ckpt:
+                out[key] = loss
+        elif f"fw_base_{opt}_wsm/ckpts/" in ckpt and "/merged_" not in ckpt:
+            out["wsm_final"] = loss
+        elif f"fw_base_{opt}_wsd/ckpts/" in ckpt:
+            out["wsd_final"] = loss
     return out
 
 
@@ -94,7 +109,18 @@ def plot_one(opt, ax=None):
     if cos is None and wsm is None and wsd is None:
         print(f"[skip] {opt}: no summary.json under exps/fw_base_{opt}[_wsm|_wsd]")
         return False
-    merges = load_merge_eval(opt)
+    eval_full = load_full_eval(opt)
+    merges = {m: eval_full[m] for m in MERGE_STYLE if m in eval_full}
+
+    # Prefer full-val eval results for the printed/legend final losses
+    # (cos baseline still uses training-time eval since we don't save its
+    # final ckpt). The trajectory curves themselves are always training-time
+    # evals — they show the trajectory shape, not the final number.
+    cos_final = cos["losses"][-1] if cos is not None else None
+    wsm_final = eval_full.get("wsm_final",
+                              wsm["losses"][-1] if wsm is not None else None)
+    wsd_final = eval_full.get("wsd_final",
+                              wsd["losses"][-1] if wsd is not None else None)
 
     own_fig = ax is None
     if own_fig:
@@ -103,15 +129,15 @@ def plot_one(opt, ax=None):
     if cos is not None:
         ax.plot(cos["iters"], cos["losses"],
                 color="#7aa6d6", lw=1.8, alpha=0.8,
-                label=f"cos baseline (final={cos['losses'][-1]:.4f})")
+                label=f"cos baseline (final={cos_final:.4f}*)")
     if wsm is not None:
         ax.plot(wsm["iters"], wsm["losses"],
                 color="#b8410e", lw=2.0,
-                label=f"WSM (final={wsm['losses'][-1]:.4f})")
+                label=f"WSM no merge (final={wsm_final:.4f})")
     if wsd is not None:
         ax.plot(wsd["iters"], wsd["losses"],
                 color="#1f4e8a", lw=2.2,
-                label=f"WSD decay (final={wsd['losses'][-1]:.4f})")
+                label=f"WSD decay (final={wsd_final:.4f})")
 
     if merges and (wsm or cos):
         x_end = (wsm or cos)["iters"][-1]
@@ -142,16 +168,20 @@ def plot_one(opt, ax=None):
         print(f"Plot saved to {out}")
 
         # Numerical summary.
-        print(f"\n{LABELS[opt]} -- final val_loss:")
-        if cos is not None:
-            print(f"  {'cos baseline':<22s} {cos['losses'][-1]:.4f}  "
-                  f"(pp={math.exp(min(cos['losses'][-1],80)):.2f})")
-        if wsd is not None:
-            print(f"  {'WSD (decay)':<22s} {wsd['losses'][-1]:.4f}  "
-                  f"(pp={math.exp(min(wsd['losses'][-1],80)):.2f})")
-        if wsm is not None:
-            print(f"  {'WSM (no merge)':<22s} {wsm['losses'][-1]:.4f}  "
-                  f"(pp={math.exp(min(wsm['losses'][-1],80)):.2f})")
+        n_full = "full val" if eval_full else "training-time eval (32 batches)"
+        print(f"\n{LABELS[opt]} -- final val_loss "
+              f"(* = training-time 32-batch eval; rest = full val set):")
+        if cos_final is not None:
+            print(f"  {'cos baseline*':<22s} {cos_final:.4f}  "
+                  f"(pp={math.exp(min(cos_final,80)):.2f})")
+        if wsd_final is not None:
+            tag = "WSD (decay)" if "wsd_final" in eval_full else "WSD (decay)*"
+            print(f"  {tag:<22s} {wsd_final:.4f}  "
+                  f"(pp={math.exp(min(wsd_final,80)):.2f})")
+        if wsm_final is not None:
+            tag = "WSM (no merge)" if "wsm_final" in eval_full else "WSM (no merge)*"
+            print(f"  {tag:<22s} {wsm_final:.4f}  "
+                  f"(pp={math.exp(min(wsm_final,80)):.2f})")
         for method, loss in merges.items():
             if loss is None:
                 continue

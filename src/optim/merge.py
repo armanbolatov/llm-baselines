@@ -9,8 +9,9 @@ Three weight schemes for averaging the last N constant-LR checkpoints:
 from __future__ import annotations
 
 import math
+import random
 from pathlib import Path
-from typing import List, Sequence
+from typing import List, Sequence, Tuple
 
 import torch
 
@@ -63,6 +64,91 @@ def merge_state_dicts(state_dicts: Sequence[dict], weights: Sequence[float]) -> 
             acc.add_(sd[key].to(torch.float32), alpha=float(w))
         out[key] = acc.to(ref.dtype)
     return out
+
+
+@torch.no_grad()
+def online_merge_state_dicts(
+    state_dicts: Sequence[dict], weights: Sequence[float]
+) -> dict:
+    """Mathematically identical to merge_state_dicts, computed incrementally.
+
+    Demonstrates how WSM merging can run *online*: maintain a single fp32
+    running buffer and accumulate `w_i * theta_i` as each checkpoint arrives.
+    Storage during training drops from N ckpts to 1 buffer.
+
+    Output is bit-identical (modulo fp summation order) to merge_state_dicts.
+    """
+    if len(state_dicts) != len(weights):
+        raise ValueError("length mismatch")
+    last = state_dicts[-1]
+    running = {}
+    for key, ref in last.items():
+        if torch.is_tensor(ref) and ref.is_floating_point():
+            running[key] = torch.zeros_like(ref, dtype=torch.float32)
+    for sd, w in zip(state_dicts, weights):
+        wf = float(w)
+        if wf == 0.0:
+            continue
+        for key, buf in running.items():
+            buf.add_(sd[key].to(torch.float32), alpha=wf)
+    out = {}
+    for key, ref in last.items():
+        if torch.is_tensor(ref) and ref.is_floating_point():
+            out[key] = running[key].to(ref.dtype)
+        else:
+            out[key] = ref.clone() if torch.is_tensor(ref) else ref
+    return out
+
+
+def sample_indices(weights: Sequence[float], k: int, seed: int = 0) -> List[int]:
+    """Sample k indices ~ Categorical(weights) with replacement (inverse CDF)."""
+    n = len(weights)
+    total = float(sum(weights))
+    if total <= 0:
+        raise ValueError("non-positive weight sum")
+    cdf = []
+    acc = 0.0
+    for w in weights:
+        acc += float(w) / total
+        cdf.append(acc)
+    cdf[-1] = 1.0
+    rng = random.Random(seed)
+    out = []
+    for _ in range(k):
+        u = rng.random()
+        lo, hi = 0, n - 1
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if u <= cdf[mid]:
+                hi = mid
+            else:
+                lo = mid + 1
+        out.append(lo)
+    return out
+
+
+@torch.no_grad()
+def sampled_merge_state_dicts(
+    state_dicts: Sequence[dict],
+    base_weights: Sequence[float],
+    k: int,
+    seed: int = 0,
+) -> Tuple[dict, List[int], List[float]]:
+    """Importance-sampled merge.
+
+    Sample k indices ~ Categorical(base_weights) with replacement, then
+    return the uniform average of the sampled checkpoints. By Monte Carlo,
+    E[result] = sum(base_weights[j] * theta_j) — same target as the
+    deterministic merge, but with variance that decreases as k grows.
+    Storage drops from N ckpts to <=k ckpts (since duplicates collapse).
+    """
+    indices = sample_indices(base_weights, k, seed=seed)
+    sampled = [state_dicts[i] for i in indices]
+    uniform = [1.0 / k] * k
+    merged = merge_state_dicts(sampled, uniform)
+    # Effective per-ckpt weight = count(j) / k. Useful as metadata.
+    eff = [indices.count(j) / k for j in range(len(state_dicts))]
+    return merged, indices, eff
 
 
 def discover_ckpts(exp_dir) -> List[Path]:
