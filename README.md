@@ -1,6 +1,6 @@
 # LionMuon
 
-Code accompanying the paper [LionMuon: Alternating Spectral and Sign Descent for Efficient Training](https://arxiv.org/abs/2605.19811).
+Code accompanying the paper LionMuon: Alternating Spectral and Sign Descent for Efficient Training.
 
 This repository is a fork of Andrei Semenov's [`llm-baselines`](https://github.com/epfml/llm-baselines), extended with the `LionMuon` and `SignMuon` optimizers and the experiments reported in the paper. Many thanks to the original contributors for maintaining such a clean and reproducible codebase.
 
