@@ -1,0 +1,44 @@
+{
+  "exp": "exps/wt_base_lionmuon_k2_kappa_ckpts",
+  "dataset": "wikitext",
+  "batch_size": 32,
+  "tail_frac": 0.1,
+  "results": [
+    {
+      "ckpt_iter": 0,
+      "alpha_hill": 33.54747904839313,
+      "kappa_hat": 2.0,
+      "noise_norm_mean": 4.7703782073411185,
+      "noise_norm_p99_over_median": 1.1488800748763461,
+      "excess_kurtosis": 1.2582447457021013,
+      "n_samples": 512
+    },
+    {
+      "ckpt_iter": 1000,
+      "alpha_hill": 66.91767379327254,
+      "kappa_hat": 2.0,
+      "noise_norm_mean": 0.40783372431822973,
+      "noise_norm_p99_over_median": 1.0880610098807821,
+      "excess_kurtosis": 0.0198672996799516,
+      "n_samples": 512
+    },
+    {
+      "ckpt_iter": 2000,
+      "alpha_hill": 46.183044183766796,
+      "kappa_hat": 2.0,
+      "noise_norm_mean": 0.3629156477590376,
+      "noise_norm_p99_over_median": 1.090968948092463,
+      "excess_kurtosis": 3.784989423773718,
+      "n_samples": 512
+    },
+    {
+      "ckpt_iter": 3000,
+      "alpha_hill": 68.39254792143159,
+      "kappa_hat": 2.0,
+      "noise_norm_mean": 0.3659092479772843,
+      "noise_norm_p99_over_median": 1.0576956768106298,
+      "excess_kurtosis": 0.35473779843636866,
+      "n_samples": 512
+    }
+  ]
+}

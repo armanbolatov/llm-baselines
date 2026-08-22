@@ -9,7 +9,7 @@ cd "$REPO_ROOT"
 
 source "$SCRIPT_DIR/common_config.sh"
 
-PYTHON=/data/users/arman/miniconda3/envs/optim/bin/python
+PYTHON=${PYTHON:-python}
 
 usage() {
   cat <<EOF

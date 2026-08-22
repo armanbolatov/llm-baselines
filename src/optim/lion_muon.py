@@ -50,6 +50,7 @@ class LionMuon(torch.optim.Optimizer):
         beta2=0.99,
         ns_steps=6,
         muon_every_k=5,
+        nesterov=False,
         weight_decay=0.0,
         srank_alpha=0.0,
         adamw_params=None,
@@ -70,6 +71,7 @@ class LionMuon(torch.optim.Optimizer):
             beta2=beta2,
             ns_steps=ns_steps,
             muon_every_k=muon_every_k,
+            nesterov=nesterov,
             weight_decay=weight_decay,
             srank_alpha=srank_alpha,
             adamw_lr=adamw_lr,
@@ -180,6 +182,12 @@ class LionMuon(torch.optim.Optimizer):
 
                     m = state["exp_avg"]
 
+                    # Nesterov (EMA form): update momentum first, then take the
+                    # lookahead interpolation on the updated buffer. This is the
+                    # EMA analogue of Muon's `g + mu * buf` lookahead.
+                    if group["nesterov"]:
+                        m.mul_(beta2).add_(g, alpha=1 - beta2)
+
                     # Lion interpolation: direction to update
                     update = m * beta1 + g * (1 - beta1)
 
@@ -217,7 +225,8 @@ class LionMuon(torch.optim.Optimizer):
                         ))
 
                     # Update momentum with beta2 (Lion rule, after computing direction)
-                    m.mul_(beta2).add_(g, alpha=1 - beta2)
+                    if not group["nesterov"]:
+                        m.mul_(beta2).add_(g, alpha=1 - beta2)
 
                 if adaptive:
                     param_lrs.append(muon_lr if did_muon else lion_lr)

@@ -133,3 +133,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# working documents and run artifacts (not part of the code release)
+logs/
+exps_local_wt/
+scripts/sync_results.sh
+paper.pdf
+paper.txt
+review*.txt
+rebuttal_*.md
+revision_plan_ru.md

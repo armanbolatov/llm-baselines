@@ -15,7 +15,7 @@ def get_wikitext_data(datasets_base_dir):
         os.makedirs(WIKITEXT_DATA_PATH, exist_ok=True)
         print("downloading WikiText-103 and tokenizing")
 
-        ds = load_dataset("wikitext", "wikitext-103-raw-v1")
+        ds = load_dataset("Salesforce/wikitext", "wikitext-103-raw-v1")
         raw_train_data = "\n".join(ds["train"]["text"])
         raw_eval_data = "\n".join(ds["validation"]["text"])
 

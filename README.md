@@ -57,6 +57,58 @@ bash scripts/train_tuning_llama.sh 0
 
 Shared hyperparameters (architecture, batch size, schedule, weight decay) live in [scripts/common_config.sh](scripts/common_config.sh). Per-experiment learning rates are at the top of each `train_*.sh` script.
 
+### Hyperparameter study (124M)
+
+One protocol for every optimizer in the paper. Both learning rates live on the
+same `1e-x / 3e-x` ladder: the grid sweeps `eta_M` (Muon step) and the ratio
+`alpha = eta_M / eta_L`, so the sign learning rate is a ladder value too.
+`P = 1` is pure Muon, `P = 10000000` the pure-sign end (Lion / Signum), and the
+two beta settings select the family (`0.9:0.9` SignMuon, `0.9:0.99` LionMuon).
+Every run is resume-safe: cells with a `summary.json` are skipped.
+
+```bash
+D=fineweb                                   # or wikitext
+export GRID_ITERS=64000 GRID_WU=3000        # sweep at the full training budget
+
+# 1. the family, from pure Muon to pure sign
+PS="1 2 5 20 10000000" LRS="1e-3 3e-3" ALPHAS="10 30 100" \
+  bash scripts/run_experiments.sh grid $D 124m
+
+# 2. extend the grid until every selected value has worse neighbours on both sides
+bash scripts/close_edges.sh $D 124m
+
+# 3. AdamW, the one baseline outside the family
+LRS="3e-4 1e-3 3e-3" bash scripts/run_experiments.sh base $D 124m
+
+# 4. the tuned winners over three seeds (the grid cell is seed 0)
+bash scripts/run_experiments.sh seeds $D 124m "1 2"
+
+# 5. the figure
+python scripts/plotting/plot_124m.py
+```
+
+`scripts/prune.sh <sweep log>` can be run alongside any sweep: it stops cells
+that diverge or fall far behind the best cell of their own group, which halves
+the cost of the grid.
+
+`GSEEDS="1 2"` repeats any grid cell over seeds, which is how two cells that sit
+within seed noise of each other are separated.
+
+### Scaling and efficiency runs
+
+355M transfers the tuned `(eta_M, alpha)` from 124M rather than re-tuning:
+
+```bash
+bash scripts/run_experiments.sh seeds fineweb 355m "0 1 2"   # BS/ACC override the 16x32 default
+bash scripts/run_experiments.sh extra fineweb 124m           # Nesterov, Dion, MuonBP
+python scripts/microbenchmark.py                             # per-step wall clock
+torchrun --nproc_per_node=8 scripts/comms_bench.py           # optimizer all-reduce
+```
+
+On consumer GPUs without NVLink, export `NCCL_P2P_DISABLE=1` before any
+distributed run. FineWeb defaults to the 10BT sample; `FINEWEB_SAMPLE=sample-100BT`
+selects the full one (about 450GB).
+
 Multi-GPU runs use `torchrun`:
 
 ```bash
@@ -77,6 +129,8 @@ torchrun --nproc_per_node=4 ./src/main.py --config_format base --distributed_bac
 | `--muon_ns_steps` | Newton-Schulz iterations |
 | `--weight_decay` | Decoupled weight decay |
 | `--srank_alpha` | Adaptive Muon trigger via stable-rank ratio (overrides `--muon_every_k`) |
+| `--nesterov` | Nesterov lookahead inside the Muon momentum EMA |
+| `--opt {dion, muonbp}` | Efficiency baselines: Dion (arXiv:2504.05295), MuonBP (arXiv:2510.16981) |
 
 ## Directory layout
 

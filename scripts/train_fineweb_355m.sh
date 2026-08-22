@@ -7,11 +7,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
-PYTHON=/data/users/arman/miniconda3/envs/optim/bin/python
+PYTHON=${PYTHON:-python}
 
 # Setup for 355M model on FineWeb
 # ~8.2B tokens, Sequence Length 1024
-DATASETS_DIR=${DATASETS_DIR:-/data/datasets/}
+DATASETS_DIR=${DATASETS_DIR:-~/datasets/}
 DATASET="fineweb"
 MODEL="base" # GPT architecture
 

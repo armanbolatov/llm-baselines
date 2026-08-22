@@ -9,14 +9,16 @@ tknzr = tiktoken.get_encoding("gpt2")
 
 
 def get_fineweb_data(datasets_dir, num_proc=5):
-    """To change the cache dir, run `export HF_HOME=/path/to/cache/` before running the code."""
-    FWEB_DATA_PATH = os.path.join(datasets_dir, "fineweb-100BT/")
+    """To change the cache dir, run `export HF_HOME=/path/to/cache/` before running the code.
+    Set FINEWEB_SAMPLE=sample-10BT to use a smaller sample (default: sample-100BT)."""
+    sample = os.environ.get("FINEWEB_SAMPLE", "sample-100BT")
+    FWEB_DATA_PATH = os.path.join(datasets_dir, f"fineweb-{sample.split('-')[-1]}/")
     if not os.path.exists(os.path.join(FWEB_DATA_PATH, "train.bin")):
         os.makedirs(FWEB_DATA_PATH, exist_ok=True)
 
         dataset = load_dataset(
             "HuggingFaceFW/fineweb",
-            name="sample-100BT",
+            name=sample,
             split="train",
             streaming=False,
             verification_mode="no_checks",

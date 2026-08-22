@@ -7,12 +7,12 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
-PYTHON=/data/users/arman/miniconda3/envs/optim/bin/python
+PYTHON=${PYTHON:-python}
 
 # Fast tuning for 720M model on FineWeb
 # Tune LR only for signmuon_fixed and lionmuon (k=1,2,5)
 
-DATASETS_DIR=${DATASETS_DIR:-/data/datasets/}
+DATASETS_DIR=${DATASETS_DIR:-~/datasets/}
 DATASET="fineweb"
 MODEL="base"
 

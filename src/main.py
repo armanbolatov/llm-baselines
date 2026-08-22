@@ -23,7 +23,9 @@ from optim.adopt import ADOPT
 from optim.base import train
 from optim.clipped import (AdagradClip, AdaGradClipDelayedEta, AdamClip,
                            AdamClipDelayedEta)
+from optim.dion import Dion
 from optim.lamb import Lamb
+from optim.muonbp import MuonBP
 from optim.lion import Lion
 from optim.mars import MARS
 from optim.muon import CombinedScheduler, Muon
@@ -198,6 +200,7 @@ def main(args, parser):
             beta2=args.beta2,
             ns_steps=args.muon_ns_steps,
             muon_every_k=args.muon_every_k,
+            nesterov=args.nesterov,
             weight_decay=args.weight_decay,
             srank_alpha=args.srank_alpha,
             adamw_params=None,
@@ -207,6 +210,44 @@ def main(args, parser):
             adamw_wd=args.weight_decay,
             norm_diag_path=nd_path,
             norm_diag_every_k=getattr(args, "norm_diag_every_k", 50),
+        )
+    elif args.opt == "dion":
+        param_list = (
+            list(model.parameters())
+            if args.distributed_backend is None
+            else list(model.module.parameters())
+        )
+        opt = Dion(
+            muon_params=param_list,
+            lr=args.muon_lr_factor,
+            rank_frac=args.dion_rank_frac,
+            weight_decay=args.weight_decay,
+            adamw_params=None,
+            adamw_lr=args.lr,
+            adamw_betas=(0.8, 0.999),
+            adamw_eps=1e-8,
+            adamw_wd=args.weight_decay,
+        )
+    elif args.opt == "muonbp":
+        param_list = (
+            list(model.parameters())
+            if args.distributed_backend is None
+            else list(model.module.parameters())
+        )
+        opt = MuonBP(
+            muon_params=param_list,
+            lr=args.muon_lr_factor,
+            momentum=args.momentum,
+            n_blocks=args.muonbp_blocks,
+            period=args.muonbp_period,
+            block_lr_ratio=args.muonbp_block_lr_ratio,
+            ns_steps=args.muon_ns_steps,
+            weight_decay=args.weight_decay,
+            adamw_params=None,
+            adamw_lr=args.lr,
+            adamw_betas=(0.8, 0.999),
+            adamw_eps=1e-8,
+            adamw_wd=args.weight_decay,
         )
     elif args.opt == "sign_muon":
         param_list = (
@@ -500,7 +541,7 @@ def main(args, parser):
         ), "Warmup steps must be < iterations."  # from schedules-and-scaling
         if args.scheduler in ["cos", "linear"]:
             # Warmup + CosineAnnealingLR (decays to 0)
-            if args.opt not in ("muon", "sign_muon", "lion_muon"):
+            if args.opt not in ("muon", "sign_muon", "lion_muon", "dion", "muonbp"):
                 warmup_sched = torch.optim.lr_scheduler.LinearLR(
                     opt, start_factor=1e-2, total_iters=args.warmup_steps
                 )
@@ -512,7 +553,7 @@ def main(args, parser):
                 )
             else:
                 scheduler = (
-                    LionMuonScheduler(opt, args) if args.opt == "lion_muon" else
+                    LionMuonScheduler(opt, args) if args.opt in ("lion_muon", "dion", "muonbp") else
                     (SignMuonScheduler(opt, args) if args.opt == "sign_muon" else CombinedScheduler(opt, args))
                 )
         elif args.scheduler == "cos_inf":
@@ -525,9 +566,9 @@ def main(args, parser):
             )
             scheduler = (
                 torch.optim.lr_scheduler.LambdaLR(opt, lambda_schedule)
-                if args.opt not in ("muon", "sign_muon", "lion_muon")
+                if args.opt not in ("muon", "sign_muon", "lion_muon", "dion", "muonbp")
                 else (
-                    LionMuonScheduler(opt, args) if args.opt == "lion_muon" else
+                    LionMuonScheduler(opt, args) if args.opt in ("lion_muon", "dion", "muonbp") else
                     (SignMuonScheduler(opt, args) if args.opt == "sign_muon" else CombinedScheduler(opt, args))
                 )
             )
@@ -542,9 +583,9 @@ def main(args, parser):
             )
             scheduler = (
                 torch.optim.lr_scheduler.LambdaLR(opt, lambda_schedule)
-                if args.opt not in ("muon", "sign_muon", "lion_muon")
+                if args.opt not in ("muon", "sign_muon", "lion_muon", "dion", "muonbp")
                 else (
-                    LionMuonScheduler(opt, args) if args.opt == "lion_muon" else
+                    LionMuonScheduler(opt, args) if args.opt in ("lion_muon", "dion", "muonbp") else
                     (SignMuonScheduler(opt, args) if args.opt == "sign_muon" else CombinedScheduler(opt, args))
                 )
             )

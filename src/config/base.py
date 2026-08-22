@@ -81,6 +81,8 @@ def parse_args(base_parser, args, namespace):
         default="adamw",
         choices=[
             "adamw",
+            "dion",
+            "muonbp",
             "sgd",
             "taia",
             "muon",
@@ -134,6 +136,10 @@ def parse_args(base_parser, args, namespace):
     parser.add_argument("--soap_data_format", default="channels_first", type=str)
     parser.add_argument("--correct_bias", default=True, type=bool)
     parser.add_argument("--nesterov", default=False, type=bool)
+    parser.add_argument("--dion_rank_frac", default=0.25, type=float)
+    parser.add_argument("--muonbp_blocks", default=4, type=int)
+    parser.add_argument("--muonbp_period", default=5, type=int)
+    parser.add_argument("--muonbp_block_lr_ratio", default=0.5, type=float)
     parser.add_argument("--muon_ns_steps", default=5, type=int)
     parser.add_argument("--muon_lr_factor", default=1.0, type=float)
     parser.add_argument("--sign_lr", default=None, type=float)  # cheap step lr in sign_muon; defaults to muon_lr_factor

@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # FineWeb is stored in the shared datasets directory.
-FW_DATASETS_DIR="/data/datasets"
+FW_DATASETS_DIR="${DATASETS_DIR:-~/datasets}"
 
 GPU_ID="0"
 if [ $# -gt 0 ] && [[ "$1" != --* ]]; then
