@@ -44,12 +44,13 @@ GB=${GRID_ITERS:-20000}   # budget goes in the name so sweeps never collide
 SUF=""; [ "$MODE" = grid ] && [ "$GB" != 20000 ] && SUF="_i$((GB/1000))k"
 
 case $MODE in
-base)    # AdamW, the one baseline outside the family
-  for lr in ${LRS:?set LRS}; do
-    echo "[$(date +%m-%d\ %H:%M)] ${P}b_adamw_lr${lr}"
-    $PY src/main.py $C --opt adamw --lr $lr --seed 0 \
-      --experiment_name "${P}b_adamw_lr${lr}_seed0" || echo "FAILED adamw $lr"
-  done ;;
+base)    # AdamW, the one baseline outside the family.
+         # betas are the benchmark's tuned pair, which beats (0.9, 0.95) here.
+  for s in $SEEDS; do for lr in ${LRS:?set LRS}; do
+    echo "[$(date +%m-%d\ %H:%M)] ${P}b_adamw_lr${lr}_seed${s}"
+    $PY src/main.py $C --opt adamw --lr $lr --beta1 0.8 --beta2 0.999 --seed $s \
+      --experiment_name "${P}b_adamw_lr${lr}_seed${s}" || echo "FAILED adamw $lr"
+  done; done ;;
 
 grid)    # eta_L = eta_M / alpha. P=1 has no sign step, so alpha is skipped.
          # P=10000000 is the pure-sign end: Lion / Signum.

@@ -53,6 +53,11 @@ def train(
         load_worker_state(ckpt_dir)
     else:
         curr_iter = 0
+        if cfg.init_from:
+            ckpt = torch.load(Path(cfg.init_from), map_location=cfg.device)
+            raw = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
+            raw.load_state_dict(ckpt["model"])
+            print(f"Initialized weights from {cfg.init_from}")
 
     # if distributed_backend.is_master_process() and cfg.log_dynamics:
     #     with open(cfg.dynamics_logger_cfg, "r") as f:

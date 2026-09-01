@@ -1,17 +1,9 @@
-"""MuonBP (Khaled et al., 2025, arXiv:2510.16981) — single-device
-reimplementation of Algorithm 1 for the single-node comparison at 124M.
+"""MuonBP (arXiv:2510.16981), single-device version.
 
-Block-periodic orthogonalization: for P-1 of every P steps, Newton-Schulz is
-applied independently to each of `n_blocks` column blocks of the momentum
-(simulating tensor-parallel shards, no cross-shard communication); every P-th
-step applies full-matrix Newton-Schulz. Two learning rates are used: lr on
-full steps and block_lr_ratio * lr on block steps (the paper shows the optimal
-ratio lies in [1/sqrt(rc), 1]).
-
-Momentum is the EMA convention of this repo (beta=0.9, no Nesterov), and both
-step types use the Moonshot RMS scaling 0.2 * sqrt(max(rows, cols)) of the
-(sub)matrix, matching muon.py / lion_muon.py so tuned LRs transfer. Non-2D
-parameters fall back to AdamW as elsewhere.
+Newton-Schulz runs per column block on most steps (no cross-shard
+communication) and on the full matrix every P-th step, with lr scaled by
+block_lr_ratio on block steps. RMS scaling matches muon.py so tuned LRs
+transfer; non-2D parameters fall back to AdamW.
 """
 
 import math

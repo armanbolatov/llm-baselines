@@ -1,15 +1,9 @@
-"""Dion (Ahn et al., 2025, arXiv:2504.05295) — single-device reimplementation
-of Algorithm 2 (unsharded) for the single-node comparison at 124M.
+"""Dion (arXiv:2504.05295), unsharded single-device version.
 
-Per 2D parameter it keeps a momentum buffer M and warm-started right vectors
-V (n x r). Each step: accumulate gradient into M, one power-iteration step
-(P = M V, U = QR(P), W = M^T U), error feedback M -= beta * U W^T (beta=0.05),
-column-normalize W into V, and apply the orthonormal update U V^T.
-
-To make the tuned Muon learning rate transferable, the update uses the same
-Moonshot RMS scaling 0.2 * sqrt(max(m, n)) as the Muon / LionMuon runs in this
-repo (instead of Dion's native sqrt(m/n)); non-2D parameters fall back to AdamW
-exactly as in muon.py / lion_muon.py.
+Per 2D parameter: momentum M, warm-started right vectors V. Each step does one
+power iteration (U = QR(MV), W = M^T U), error feedback M -= 0.05 * U W^T, and
+applies U V^T scaled by 0.2 * sqrt(max(m, n)) so tuned Muon LRs transfer.
+Non-2D parameters fall back to AdamW as in muon.py.
 """
 
 import math
