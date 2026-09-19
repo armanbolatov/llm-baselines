@@ -19,7 +19,8 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from plot_results import STYLE, compute_flops  # noqa: E402
+from plot_results import (ERR_KW, LEGEND_KW, POINT_KW, compute_flops, finish_axis,
+                          legend_handle, style_for)  # noqa: E402
 
 ARCH = dict(n_layer=12, n_embd=768, seq_len=512, batch_size=32, iterations=64000)
 INF = 10_000_000                      # muon_every_k used for P = infinity
@@ -64,7 +65,7 @@ def runs(tag):
     return out
 
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
+fig, axes = plt.subplots(1, 2, figsize=(12, 3.8))
 handles = {}
 for ax, (tag, title) in zip(axes, [("fw", "FineWeb"), ("wt", "WikiText-103")]):
     for key, vals in sorted(runs(tag).items(), key=lambda kv: str(kv[0])):
@@ -74,22 +75,21 @@ for ax, (tag, title) in zip(axes, [("fw", "FineWeb"), ("wt", "WikiText-103")]):
             p, fam = key
             label = label_of(p, fam)
             flops = compute_flops(opt="lion_muon", K=p, ns_steps=5, **ARCH)[0]
-        s = STYLE[label]
-        ax.scatter(flops, st.mean(vals), s=110, zorder=5, color=s["color"],
-                   marker=s["marker"], alpha=0.9, edgecolor="black", linewidth=0.5)
+        s = style_for(label)
+        ax.scatter(flops, st.mean(vals), color=s["color"], marker=s["marker"], **POINT_KW)
         if len(vals) > 1:
-            ax.errorbar(flops, st.mean(vals), yerr=st.stdev(vals), zorder=4,
-                        color=s["color"], capsize=3, linewidth=1)
-        handles.setdefault(label, Line2D([0], [0], marker=s["marker"], linestyle="None",
-                                         markerfacecolor=s["color"], markeredgecolor="black",
-                                         markeredgewidth=0.5, markersize=8, label=label))
-    ax.set_xlabel("Total Training FLOPs", fontsize=11)
-    ax.set_title(title, fontsize=12)
+            ax.errorbar(flops, st.mean(vals), yerr=st.stdev(vals), color=s["color"], **ERR_KW)
+        handles.setdefault(label, legend_handle(label))
+    finish_axis(ax, "Total Training FLOPs", title)
     ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
-    ax.grid(alpha=0.3)
 axes[0].set_ylabel("Best Val Loss", fontsize=11)
-fig.legend(handles=list(handles.values()), loc="center right", fontsize=9, title="Optimizer")
-fig.tight_layout(rect=[0, 0, 0.82, 1])
-out = "results/figures/124m_loss_vs_flops.png"
+# legend below the panels, in a fixed order: baselines first, then by P within each family
+order = ["AdamW", "Lion (P=∞)", "Signum (P=∞)", "Muon (P=1)",
+         "LionMuon P=1", "LionMuon P=2", "LionMuon P=5", "LionMuon P=20",
+         "SignMuon P=2", "SignMuon P=5", "SignMuon P=20"]
+ordered = [handles[k] for k in order if k in handles] + [h for k, h in handles.items() if k not in order]
+fig.legend(handles=ordered, ncol=min(len(ordered), 6), **LEGEND_KW)
+fig.tight_layout(rect=[0, 0.08, 1, 1])
+out = "results/figures/loss_vs_flops_124m.png"
 fig.savefig(out, dpi=150, bbox_inches="tight")
 print(f"{out} written")

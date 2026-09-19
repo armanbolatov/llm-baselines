@@ -21,15 +21,19 @@ if [ "$SCALE" = 355m ]; then
   # 16x32 keeps the paper's effective batch 512 and fits a 32GB card
   ARCH="--batch_size ${BS:-16} --acc_steps ${ACC:-32} --sequence_length 1024 --n_layer 24 --n_head 16 --n_embd 1024"
   SCHED="--iterations 15650 --warmup_steps 1500"
+elif [ "$SCALE" = 720m ]; then
+  # effective batch 1984 as in train_fineweb_720m.sh; 1x Chinchilla (14.4B tokens)
+  ARCH="--batch_size ${BS:-16} --acc_steps ${ACC:-124} --sequence_length 512 --n_layer 12 --n_head 16 --n_embd 2048"
+  SCHED="--iterations 14000 --warmup_steps 700"
 else
   ARCH="--batch_size ${BS:-32} --acc_steps ${ACC:-1} --sequence_length 512 --n_layer 12 --n_head 12 --n_embd 768"
   SCHED="--iterations 64000 --warmup_steps 3000"
 fi
 [ "$MODE" = grid ] && [ "$SCALE" = 124m ] && SCHED="--iterations ${GRID_ITERS:-20000} --warmup_steps ${GRID_WU:-1000}"
 
-C="--config_format base --dataset $DS --model base --device $DEV $ARCH $SCHED
+C="--config_format base --dataset $DS --datasets_dir ${DATASETS_DIR:-~/datasets/} --model base --device $DEV $ARCH $SCHED
   --scheduler cos --muon_ns_steps 5 --weight_decay 0.1 --grad_clip 0.5
-  --eval_interval 500 --lr 1e-3"
+  --eval_interval 500 --lr 1e-3 --latest_ckpt_interval ${CKPT_EVERY:-0}"
 
 # name k muon_lr sign_lr b1 b2 seed [extra flags...]
 run(){ local name=$1 k=$2 mlr=$3 slr=$4 b1=$5 b2=$6 seed=$7; shift 7
@@ -95,6 +99,7 @@ seeds)   # columns: P eta_M alpha beta1 beta2 label
   for s in $SEEDS; do
     echo "$W" | while read p mlr al b1 b2 lbl; do
       [ -n "${PS:-}" ] && ! echo " $PS " | grep -q " $p " && continue
+      [ -n "${LBLS:-}" ] && ! echo " $LBLS " | grep -q " $lbl " && continue
       sl=-; [ "$al" != "-" ] && sl=$(awk -v m=$mlr -v a=$al 'BEGIN{printf "%.2e", m/a}')
       run ${P}t_${lbl}_p${p} $p $mlr $sl $b1 $b2 $s
     done
@@ -106,7 +111,7 @@ extra)
     --seed 0 --experiment_name ${P}_dion_seed0 || echo "FAILED dion"
   echo "[$(date +%H:%M)] muonbp"
   $PY src/main.py $C --opt muonbp --muon_lr_factor 1e-3 --muonbp_blocks 4 \
-    --muonbp_period 5 --muonbp_block_lr_ratio 0.5 \
+    --muonbp_period 5 --muonbp_block_lr_ratio 1.0 \
     --seed 0 --experiment_name ${P}_muonbp_seed0 || echo "FAILED muonbp" ;;
 esac
 echo "[$(date +%m-%d\ %H:%M)] $MODE $DS $SCALE done"
