@@ -54,7 +54,7 @@ def train(
     else:
         curr_iter = 0
         if cfg.init_from:
-            ckpt = torch.load(Path(cfg.init_from), map_location=cfg.device)
+            ckpt = torch.load(Path(cfg.init_from), map_location=cfg.device, weights_only=False)
             raw = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
             raw.load_state_dict(ckpt["model"])
             print(f"Initialized weights from {cfg.init_from}")
@@ -192,10 +192,13 @@ def train(
 
             current_lrs = [param_group["lr"] for param_group in opt.param_groups]
 
+            # wall: synchronized wall-clock (the .item() above waits for the
+            # whole iteration incl. NCCL), so differences between log lines
+            # give an accurate time per log_interval iterations.
             log_str = (
                 f"Train: Iter={curr_iter} ({epoch:0.3f} epochs) "
                 f"train_loss={train_loss:.3f} iter_dt={dt:.2e}s "
-                f"lr={current_lrs[0]:.2e}"
+                f"lr={current_lrs[0]:.2e} wall={time.time():.3f}"
             )
             
             # Add srank if adaptive optimizer

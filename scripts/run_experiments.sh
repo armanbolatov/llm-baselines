@@ -84,7 +84,9 @@ seeds)   # columns: P eta_M alpha beta1 beta2 label
 5  1e-2 300 0.9 0.9  signmuon
 5  3e-3 30  0.9 0.99 lionmuon
 20 1e-2 100 0.9 0.9  signmuon
-20 1e-2 100 0.9 0.99 lionmuon" ;;
+20 1e-2 100 0.9 0.99 lionmuon
+10000000 3e-4 1   0.9 0.9  signmuon
+10000000 3e-4 1   0.9 0.99 lionmuon" ;;
   wikitext) W="1  3e-3 -   0.9 0.9  signmuon
 1  3e-3 -   0.9 0.99 lionmuon
 2  3e-3 3   0.9 0.9  signmuon

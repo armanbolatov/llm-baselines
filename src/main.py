@@ -107,6 +107,8 @@ def main(args, parser):
     print(f"\nModel:\n{model}")
 
     model = distributed_backend.transform_model(model)
+    # Dion averages low-rank factors instead of gradients (see optim/dion.py).
+    distributed_backend.skip_grad_sync = args.opt == "dion"
 
     group_specs = distributed_backend.get_raw_model(model).get_parameter_group_specs()
     param_name_mapping = {p_name: p for p_name, p in model.named_parameters()}

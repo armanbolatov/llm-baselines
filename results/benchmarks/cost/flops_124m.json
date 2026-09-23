@@ -1,0 +1,37 @@
+{
+ "mode": "flops",
+ "global_batch": 32,
+ "seq": 512,
+ "n_params": 123980544,
+ "fwd_bwd_per_step": 13229573013504,
+ "six_N_T": 12187783397376,
+ "methods": {
+  "adamw": {
+   "optimizer_per_step": 0.0,
+   "total_per_step": 13229573013504.0
+  },
+  "muon": {
+   "optimizer_per_step": 1527397744640.0,
+   "total_per_step": 14756970758144.0
+  },
+  "lionmuon_p2": {
+   "optimizer_per_step": 763698872320.0,
+   "total_per_step": 13993271885824.0
+  },
+  "lionmuon_p5": {
+   "optimizer_per_step": 305479548928.0,
+   "total_per_step": 13535052562432.0
+  },
+  "muonbp_p5": {
+   "optimizer_per_step": 1010852429824.0,
+   "total_per_step": 14240425443328.0
+  },
+  "dion": {
+   "optimizer_per_step": 130862284800.0,
+   "total_per_step": 13360435298304.0
+  }
+ },
+ "host": "brain-lab.mipt.ru",
+ "gpu": "NVIDIA A100 80GB PCIe",
+ "date": "2026-09-17 17:35 UTC"
+}

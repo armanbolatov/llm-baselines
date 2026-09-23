@@ -34,6 +34,13 @@ flags() { case $1 in
   lionmuon_p2) echo "--opt lion_muon --muon_every_k 2 --muon_lr_factor 1e-3 --sign_lr 1e-4 --beta1 0.9 --beta2 0.99";;
   lionmuon_p5) echo "--opt lion_muon --muon_every_k 5 --muon_lr_factor 3e-3 --sign_lr 1e-4 --beta1 0.9 --beta2 0.99";;
   signmuon_p2) echo "--opt lion_muon --muon_every_k 2 --muon_lr_factor 3e-3 --sign_lr 1e-4 --beta1 0.9 --beta2 0.9";;
+  # the rest of the 124M family at their tuned 64k-step optima, so the DDP panel has the same baselines as the grid
+  signmuon_p5) echo "--opt lion_muon --muon_every_k 5 --muon_lr_factor 1e-2 --sign_lr 3.33e-5 --beta1 0.9 --beta2 0.9";;
+  lionmuon_p1) echo "--opt lion_muon --muon_every_k 1 --muon_lr_factor 1e-3 --beta1 0.9 --beta2 0.99";;
+  lion)        echo "--opt lion_muon --muon_every_k 10000000 --muon_lr_factor 3e-4 --sign_lr 3e-4 --beta1 0.9 --beta2 0.99";;
+  signum)      echo "--opt lion_muon --muon_every_k 10000000 --muon_lr_factor 3e-4 --sign_lr 3e-4 --beta1 0.9 --beta2 0.9";;
+  # Lion at its 64k rate spikes at this horizon and batch, so it also gets a run one step lower
+  lion_1e-4)   echo "--opt lion_muon --muon_every_k 10000000 --muon_lr_factor 1e-4 --sign_lr 1e-4 --beta1 0.9 --beta2 0.99";;
   # Baselines from the papers, untuned at this horizon, so a small LR sweep around Muon's optimum.
   # Dion: rank r = min(m,n)/4, error feedback 0.05 (mu = 0.95), local momentum + factor all-reduce.
   # MuonBP: 4 column blocks (= 4-way TP), full step every 5, block updates RMS-scaled by block dims.

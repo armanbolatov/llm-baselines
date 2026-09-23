@@ -34,6 +34,10 @@ class DataParallelDistributedBackend(DistributedBackend):
         args.data_seed = args.data_seed
         return args
 
+    # Optimizers that synchronize their own state (Dion) set this to True so DDP
+    # never all-reduces gradients; every rank then holds its local gradient.
+    skip_grad_sync = False
+
     def transform_model(self, model):
         return DDP(model, device_ids=[self.local_rank])
 
@@ -43,7 +47,7 @@ class DataParallelDistributedBackend(DistributedBackend):
     ):
         model.require_backward_grad_sync = (
             microstep_idx == gradient_accumulation_steps - 1
-        )
+        ) and not self.skip_grad_sync
         yield
 
     def is_master_process(self) -> bool:

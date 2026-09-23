@@ -1,0 +1,31 @@
+% FineWeb
+\begin{tabular}{llcccc}
+\toprule
+method & $\eta_M$ swept & $\alpha$ swept & cells & chosen $(\eta_M,\alpha)$ & loss (next $\eta_M$ down / up) \\
+\midrule
+Muon ($P{=}1$) & 0.0003--0.003 & -- & 3+0 & 0.001 & \textbf{3.528} (3.596 / 3.534) \\
+SignMuon $P{=}2$ & 0.001--0.01 & 3--300 & 8+3 & (0.003, 30) & \textbf{3.511} (3.529 / cut) \\
+SignMuon $P{=}5$ & 0.001--0.03 & 3--1000 & 13+3 & (0.01, 300) & \textbf{3.508} (3.534 / cut) \\
+SignMuon $P{=}20$ & 0.003--0.1 & 10--1000 & 8+4 & (0.01, 100) & \textbf{3.540} (3.581 / 3.551) \\
+LionMuon $P{=}1$ & 0.0003--0.003 & -- & 2+1 & 0.001 & \textbf{3.511} (3.540 / cut) \\
+LionMuon $P{=}2$ & 0.0003--0.01 & 1--300 & 12+2 & (0.001, 10) & \textbf{3.501} (3.538 / 3.507) \\
+LionMuon $P{=}5$ & 0.001--0.01 & 3--300 & 9+2 & (0.003, 30) & \textbf{3.500} (3.523 / cut) \\
+LionMuon $P{=}20$ & 0.001--0.03 & 10--300 & 8+3 & (0.01, 100) & \textbf{3.511} (3.538 / cut) \\
+\bottomrule
+\end{tabular}
+
+% WikiText-103
+\begin{tabular}{llcccc}
+\toprule
+method & $\eta_M$ swept & $\alpha$ swept & cells & chosen $(\eta_M,\alpha)$ & loss (next $\eta_M$ down / up) \\
+\midrule
+Muon ($P{=}1$) & 0.001--0.01 & -- & 2+1 & 0.003 & \textbf{2.838} (2.884 / cut) \\
+SignMuon $P{=}2$ & 0.0003--0.03 & 1--3000 & 12+5 & (0.003, 3) & \textbf{2.835} (2.885 / cut) \\
+SignMuon $P{=}5$ & 0.0001--0.03 & 1--100 & 10+5 & (0.01, 30) & \textbf{2.842} (2.890 / cut) \\
+SignMuon $P{=}20$ & 0.001--0.1 & 3--3000 & 9+8 & (0.03, 100) & \textbf{2.859} (2.902 / cut) \\
+LionMuon $P{=}1$ & 0.001--0.01 & -- & 2+1 & 0.003 & \textbf{2.826} (2.861 / cut) \\
+LionMuon $P{=}2$ & 0.0003--0.01 & 1--3000 & 8+8 & (0.003, 10) & \textbf{2.827} (2.881 / cut) \\
+LionMuon $P{=}5$ & 0.0003--0.03 & 1--100 & 8+5 & (0.01, 30) & \textbf{2.825} (2.872 / cut) \\
+LionMuon $P{=}20$ & 0.001--0.1 & 3--300 & 9+5 & (0.03, 100) & \textbf{2.839} (2.877 / cut) \\
+\bottomrule
+\end{tabular}

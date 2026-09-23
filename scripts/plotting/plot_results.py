@@ -20,20 +20,20 @@ from matplotlib.lines import Line2D  # noqa: E402
 
 STYLE = {
     'AdamW':              {'color': '#888888', 'ls': '-',  'lw': 1.8, 'marker': 's'},
-    # SignMuon family: dark red (K=1) -> light pink (K=inf)
-    'Muon (P=1)':         {'color': '#8b0000', 'ls': '-',        'lw': 2.2, 'marker': '^'},
-    'SignMuon P=2':       {'color': '#cc1111', 'ls': '--',       'lw': 2.2, 'marker': '^'},
-    'SignMuon P=5':       {'color': '#e04040', 'ls': '-.',       'lw': 2.2, 'marker': '^'},
-    'SignMuon P=20':      {'color': '#e87070', 'ls': ':',        'lw': 2.2, 'marker': '^'},
-    'SignMuon P=100':     {'color': '#f0a0a0', 'ls': (0,(1,3)),  'lw': 2.2, 'marker': '^'},
-    'Signum (P=\u221e)':  {'color': '#f5c8c8', 'ls': (0,(5,10)), 'lw': 2.2, 'marker': '^'},
-    # LionMuon family: dark blue (K=1) -> light blue (K=inf)
-    'LionMuon P=1':        {'color': '#00008b', 'ls': '-',        'lw': 2.2, 'marker': 'o'},
-    'LionMuon P=2':        {'color': '#1144cc', 'ls': '--',       'lw': 2.2, 'marker': 'o'},
-    'LionMuon P=5':        {'color': '#3377ee', 'ls': '-.',       'lw': 2.2, 'marker': 'o'},
-    'LionMuon P=20':       {'color': '#6699ee', 'ls': ':',        'lw': 2.2, 'marker': 'o'},
-    'LionMuon P=100':      {'color': '#99bbff', 'ls': (0,(1,3)),  'lw': 2.2, 'marker': 'o'},
-    'Lion (P=\u221e)':   {'color': '#c8d8f5', 'ls': (0,(5,10)), 'lw': 2.2, 'marker': 'o'},
+    # SignMuon family: one red hue, dark (P=1) to light (P=inf), in even lightness steps
+    'Muon (P=1)':         {'color': '#5a0a0a', 'ls': '-',        'lw': 2.2, 'marker': '^'},
+    'SignMuon P=2':       {'color': '#c8202a', 'ls': '--',       'lw': 2.2, 'marker': '^'},
+    'SignMuon P=5':       {'color': '#ee6a6a', 'ls': '-.',       'lw': 2.2, 'marker': '^'},
+    'SignMuon P=20':      {'color': '#f5a3a3', 'ls': ':',        'lw': 2.2, 'marker': '^'},
+    'SignMuon P=100':     {'color': '#f8bcbc', 'ls': (0,(1,3)),  'lw': 2.2, 'marker': '^'},
+    'Signum (P=\u221e)':  {'color': '#fad4d4', 'ls': (0,(5,10)), 'lw': 2.2, 'marker': '^'},
+    # LionMuon family: one blue hue, dark (P=1) to light (P=inf), in even lightness steps
+    'LionMuon P=1':        {'color': '#0b1f6b', 'ls': '-',        'lw': 2.2, 'marker': 'o'},
+    'LionMuon P=2':        {'color': '#1f5fd6', 'ls': '--',       'lw': 2.2, 'marker': 'o'},
+    'LionMuon P=5':        {'color': '#4f9be8', 'ls': '-.',       'lw': 2.2, 'marker': 'o'},
+    'LionMuon P=20':       {'color': '#8fc1f5', 'ls': ':',        'lw': 2.2, 'marker': 'o'},
+    'LionMuon P=100':      {'color': '#aed3f8', 'ls': (0,(1,3)),  'lw': 2.2, 'marker': 'o'},
+    'Lion (P=\u221e)':   {'color': '#cce2fa', 'ls': (0,(5,10)), 'lw': 2.2, 'marker': 'o'},
 }
 
 

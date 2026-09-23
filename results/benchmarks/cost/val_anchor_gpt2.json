@@ -1,0 +1,43 @@
+{
+ "val": "/home/shared/datasets/fineweb-100BT/val.bin",
+ "val_tokens": 10431174,
+ "model": "gpt2",
+ "runs": [
+  {
+   "seq": 512,
+   "set": "full",
+   "windows": 20368,
+   "loss": 3.5626
+  },
+  {
+   "seq": 512,
+   "set": "eval_subset_ddp_b8x32",
+   "windows": 256,
+   "loss": 3.5652
+  },
+  {
+   "seq": 512,
+   "set": "eval_subset_grid_b32x32",
+   "windows": 1024,
+   "loss": 3.5684
+  },
+  {
+   "seq": 1024,
+   "set": "full",
+   "windows": 10184,
+   "loss": 3.4759
+  },
+  {
+   "seq": 1024,
+   "set": "eval_subset_ddp_b8x32",
+   "windows": 256,
+   "loss": 3.4565
+  },
+  {
+   "seq": 1024,
+   "set": "eval_subset_grid_b32x32",
+   "windows": 1024,
+   "loss": 3.492
+  }
+ ]
+}

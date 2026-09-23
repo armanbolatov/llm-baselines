@@ -1,0 +1,8 @@
+{"machine":"opt","scale":"355m","name":"fw355b_adamw_lr1e-3_seed0","best":3.0641,"done":true}
+{"machine":"opt","scale":"355m","name":"fw355t_lionmuon_p5_seed0","best":3.0227,"done":true}
+{"machine":"opt","scale":"355m","name":"fw355t_signmuon_p1_seed0","best":3.0399,"done":true}
+{"machine":"opt","scale":"355m","name":"fw355t_signmuon_p1_seed1","best":3.037,"done":true}
+{"machine":"opt","scale":"355m","name":"fw355t_signmuon_p1_seed2","best":3.0362,"done":true}
+{"machine":"opt","scale":"355m","name":"fw355t_signmuon_p2_seed0","best":3.0076,"done":true}
+{"machine":"opt","scale":"355m","name":"fw355t_signmuon_p2_seed1","best":3.0092,"done":true}
+{"machine":"opt","scale":"355m","name":"fw355t_signmuon_p2_seed2","best":3.0089,"done":true}

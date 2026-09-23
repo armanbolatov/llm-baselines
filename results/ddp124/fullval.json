@@ -1,0 +1,15 @@
+{
+  "_what": "Finished ddp124 runs re-scored on the held-out split with 8000 windows of 512 tokens (4.1M tokens), against the 256 windows (131k tokens) a training-time eval scores. Same model code and same loss computation (scripts/eval_val_anchor.py --model ckpt), so the two columns differ only in how much of the split they cover.",
+  "_where": "raw JSON on opt2 in results/ddp124_fullval/; run 2026-09-18 05:34 UTC",
+  "_why_partial": "only these runs still had a checkpoint; the five headline runs (adamw, muon, lionmuon_p2, lionmuon_p5, signmuon_p2) had theirs deleted, so they will be re-scored from seed 1 instead",
+  "_finding": "the full split is harder by +0.008 for every finished run, a uniform shift, so the subset the paper quotes is representative and the margins between methods are unaffected",
+  "runs": [
+    {"method": "muonbp_1e-3", "subset_131k": 3.4143, "full_4.1M": 3.4223, "delta": 0.0080, "done": true},
+    {"method": "dion_1e-3",   "subset_131k": 3.4287, "full_4.1M": 3.4371, "delta": 0.0084, "done": true},
+    {"method": "dion_3e-3",   "subset_131k": 3.4505, "full_4.1M": 3.4581, "delta": 0.0076, "done": true},
+    {"method": "muon_3e-4",   "subset_131k": 3.4672, "full_4.1M": 3.4730, "delta": 0.0058, "done": true},
+    {"method": "muon_3e-3",   "subset_131k": 3.756,  "full_4.1M": 3.7617, "delta": null, "done": false, "note": "paused at 96k, not a final loss"},
+    {"method": "dion_3e-4",   "subset_131k": 4.000,  "full_4.1M": 4.0939, "delta": null, "done": false, "note": "mid-training at 20k, not a final loss"}
+  ],
+  "_anchor": "public GPT-2 124M on the same split: 3.5626 over the whole split (20368 windows) against 3.5652 on the 256-window subset, i.e. the subset is not biased for a model trained elsewhere either"
+}

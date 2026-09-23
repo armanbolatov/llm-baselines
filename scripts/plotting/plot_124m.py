@@ -59,9 +59,22 @@ def runs(tag):
     for (p, fam), v0 in cells.items():
         out[(p, fam)] = [v0] + [v for s in (1, 2)
                                 if (v := find(f"{tag}124t_{fam}muon_p{p}_seed{s}")) is not None]
-    for f in glob.glob(f"exps*/{tag}124b_adamw_lr*_seed0/summary.json"):
-        if (v := best(f)) is not None:
-            out[("adamw",)] = [min(v, out.get(("adamw",), [9e9])[0])]
+        # the pure-sign seeds were run through the grid, so they carry the grid name
+        if p == INF and len(out[(p, fam)]) == 1:
+            for src in ("exps", "exps_124m"):
+                for s in (1, 2):
+                    for f in glob.glob(f"{src}/{tag}124g_p{p}_*_b{'09-09' if fam == 'sign' else '09-099'}_i64k_seed{s}/summary.json"):
+                        if (v := best(f)) is not None:
+                            out[(p, fam)].append(v)
+    adamw = {}                                   # lr -> [seed losses], best lr by seed 0
+    for src in ("exps", "exps_124m"):
+        for f in glob.glob(f"{src}/{tag}124b_adamw_lr*_seed*/summary.json"):
+            m = re.search(r"_lr([^_]+)_seed(\d)", f)
+            if m and (v := best(f)) is not None:
+                adamw.setdefault(m.group(1), {})[int(m.group(2))] = v
+    if adamw:
+        lr = min(adamw, key=lambda k: adamw[k].get(0, 9e9))
+        out[("adamw",)] = [adamw[lr][s] for s in sorted(adamw[lr])]
     return out
 
 

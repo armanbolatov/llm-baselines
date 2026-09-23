@@ -32,7 +32,8 @@ class LionMuon(torch.optim.Optimizer):
     Arguments:
         muon_params: Parameters to optimize with LionMuon.
         lr: Learning rate for Muon steps.
-        lion_lr: Learning rate for Lion steps. If None, defaults to lr.
+        lion_lr: Learning rate for Lion steps. If None, it is set to lr / 100, which is only a
+            placeholder: any run that actually takes sign steps must pass it explicitly.
         beta1: Interpolation coefficient for update direction (default 0.95).
         beta2: Momentum EMA decay (default 0.99).
         ns_steps: Newton-Schulz steps for Muon (default 6).
@@ -162,15 +163,30 @@ class LionMuon(torch.optim.Optimizer):
             if not adaptive:
                 lr = muon_lr if is_muon_global else lion_lr
 
+            # Distributed (DDP) layout: gradients are already averaged across
+            # ranks, so the momentum buffer is replicated on every rank. A Lion
+            # (sign) step is element-wise and is applied locally with no
+            # communication. Only Muon steps shard Newton-Schulz across ranks
+            # (param i is orthogonalized by rank i % world_size) and all-reduce
+            # the concatenated updates. Adaptive (srank) mode keeps the
+            # all-reduce path on every step.
+            replicated = self.world_size > 1
+            local_step = replicated and not adaptive and not is_muon_global
+            wd = group["weight_decay"]
+
             total_params = sum(p.numel() for p in params)
-            updates_flat = torch.zeros(total_params, device="cuda", dtype=torch.bfloat16)
+            updates_flat = (
+                None if local_step
+                else torch.zeros(total_params, device="cuda", dtype=torch.bfloat16)
+            )
             if adaptive:
                 param_lrs = []
             curr_idx = 0
 
             for i, p in enumerate(params):
                 did_muon = False
-                if i % self.world_size == self.rank:
+                owner = (i % self.world_size == self.rank)
+                if owner or replicated:
                     g = p.grad
                     assert g is not None
                     if g.ndim > 2:
@@ -188,41 +204,48 @@ class LionMuon(torch.optim.Optimizer):
                     if group["nesterov"]:
                         m.mul_(beta2).add_(g, alpha=1 - beta2)
 
-                    # Lion interpolation: direction to update
-                    update = m * beta1 + g * (1 - beta1)
+                    if owner or local_step:
+                        # Lion interpolation: direction to update
+                        update = m * beta1 + g * (1 - beta1)
 
-                    # Decide muon vs lion for this param
-                    m_rows, n_cols = int(update.size(0)), int(update.size(1))
-                    dmin, dmax = min(m_rows, n_cols), max(m_rows, n_cols)
-                    if adaptive:
-                        srank_ratio, srank_sq = estimate_stable_rank(update, power_iters=3)
-                        did_muon = srank_sq <= (srank_alpha * dmin)
-                        self._diag["srank_ratios"].append(float(srank_ratio))
-                        self._diag["update_types"].append("NS" if did_muon else "sign")
-                    else:
-                        did_muon = is_muon_global
+                        # Decide muon vs lion for this param
+                        m_rows, n_cols = int(update.size(0)), int(update.size(1))
+                        dmin, dmax = min(m_rows, n_cols), max(m_rows, n_cols)
+                        if adaptive:
+                            srank_ratio, srank_sq = estimate_stable_rank(update, power_iters=3)
+                            did_muon = srank_sq <= (srank_alpha * dmin)
+                            self._diag["srank_ratios"].append(float(srank_ratio))
+                            self._diag["update_types"].append("NS" if did_muon else "sign")
+                        else:
+                            did_muon = is_muon_global
 
-                    if did_muon:
-                        # NS orthogonalization + Moonshot scaling
-                        update = zeropower_via_newtonschulz5(update, steps=group["ns_steps"])
-                        update *= 0.2 * max(update.size(0), update.size(1)) ** 0.5
-                    else:
-                        # Lion: pure sign
-                        update = update.sign()
+                        if did_muon:
+                            # NS orthogonalization + Moonshot scaling
+                            update = zeropower_via_newtonschulz5(update, steps=group["ns_steps"])
+                            update *= 0.2 * max(update.size(0), update.size(1)) ** 0.5
+                        else:
+                            # Lion: pure sign
+                            update = update.sign()
 
-                    updates_flat[curr_idx : curr_idx + p.numel()] = update.flatten()
+                        if local_step:
+                            # sign step: identical on every rank, apply directly
+                            if wd > 0:
+                                p.data.mul_(1 - lion_lr * wd)
+                            p.data.add_(update.view_as(p.data).type_as(p.data), alpha=-lion_lr)
+                        else:
+                            updates_flat[curr_idx : curr_idx + p.numel()] = update.flatten()
 
-                    # Capture diagnostics BEFORE the in-place momentum update so
-                    # that m corresponds to M_{t-1} (pre-update buffer) when
-                    # computing the (G - M) residual. Clone p so the W_t
-                    # snapshot survives the parameter update later in this step.
-                    if norm_diag_active:
-                        diag_payload.append((
-                            p.detach().clone(),
-                            g.detach().clone(),
-                            m.detach().clone(),
-                            update.detach().clone(),
-                        ))
+                        # Capture diagnostics BEFORE the in-place momentum update so
+                        # that m corresponds to M_{t-1} (pre-update buffer) when
+                        # computing the (G - M) residual. Clone p so the W_t
+                        # snapshot survives the parameter update later in this step.
+                        if norm_diag_active:
+                            diag_payload.append((
+                                p.detach().clone(),
+                                g.detach().clone(),
+                                m.detach().clone(),
+                                update.detach().clone(),
+                            ))
 
                     # Update momentum with beta2 (Lion rule, after computing direction)
                     if not group["nesterov"]:
@@ -232,22 +255,22 @@ class LionMuon(torch.optim.Optimizer):
                     param_lrs.append(muon_lr if did_muon else lion_lr)
                 curr_idx += p.numel()
 
-            if self.world_size > 1:
-                dist.all_reduce(updates_flat, op=dist.ReduceOp.SUM)
+            if not local_step:
+                if self.world_size > 1:
+                    dist.all_reduce(updates_flat, op=dist.ReduceOp.SUM)
 
-            curr_idx = 0
-            wd = group["weight_decay"]
-            for j, p in enumerate(params):
-                u = (
-                    updates_flat[curr_idx : curr_idx + p.numel()]
-                    .view_as(p.data)
-                    .type_as(p.data)
-                )
-                plr = param_lrs[j] if adaptive else lr
-                if wd > 0:
-                    p.data.mul_(1 - plr * wd)
-                p.data.add_(u, alpha=-plr)
-                curr_idx += p.numel()
+                curr_idx = 0
+                for j, p in enumerate(params):
+                    u = (
+                        updates_flat[curr_idx : curr_idx + p.numel()]
+                        .view_as(p.data)
+                        .type_as(p.data)
+                    )
+                    plr = param_lrs[j] if adaptive else lr
+                    if wd > 0:
+                        p.data.mul_(1 - plr * wd)
+                    p.data.add_(u, alpha=-plr)
+                    curr_idx += p.numel()
 
             ############################
             #       AdamW backup       #

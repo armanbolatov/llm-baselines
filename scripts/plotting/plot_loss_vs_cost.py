@@ -44,6 +44,10 @@ DDP_METHODS = {
     "lionmuon_p5": ("LionMuon P=5", "lionmuon_p5"),
     "dion":        ("Dion", "dion"),
     "muonbp":      ("MuonBP (P=5)", "muonbp_p5"),
+    "lionmuon_p1": ("LionMuon P=1", "muon"),
+    "signmuon_p5": ("SignMuon P=5", "lionmuon_p5"),
+    "signum":      ("Signum (P=∞)", "adamw"),
+    "lion":        ("Lion (P=∞)", "adamw"),
 }
 def label_355m(name):
     """Map a 355M experiment dir name to its legend label."""
@@ -85,7 +89,7 @@ def cells_355m(paths):
 
 def ddp_family(method):
     """'dion_3e-4' -> ('dion', '3e-4'); 'muon_3e-3' -> ('muon', '3e-3'); plain 'muon' ran at 1e-3."""
-    for fam in ("dion", "muonbp", "muon"):
+    for fam in ("dion", "muonbp", "muon", "lion"):
         if method == fam:
             return fam, "1e-3"
         if method.startswith(fam + "_"):
@@ -168,11 +172,11 @@ def main(paths):
     cost, xlabel, per_run = per_step_cost(mode)
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 3.8))
-    handles = draw(axes[0], cells_355m(paths), "Total Training FLOPs",
-                   "355M, 8.2B tokens (transferred hyperparameters)")
-    axes[0].ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
-    handles.update(draw(axes[1], cells_ddp(runs_ddp(ddp_file, cost, per_run)), xlabel,
-                        "124M, 2.46B tokens, 4-GPU data parallel"))
+    handles = draw(axes[0], cells_ddp(runs_ddp(ddp_file, cost, per_run)), xlabel,
+                   "124M, 2.46B tokens, 4-GPU data parallel")
+    handles.update(draw(axes[1], cells_355m(paths), "Total Training FLOPs",
+                        "355M, 8.2B tokens (transferred hyperparameters)"))
+    axes[1].ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
     axes[0].set_ylabel("Best Val Loss", fontsize=11)
     ordered = [handles[k] for k in ORDER if k in handles] + \
               [h for k, h in handles.items() if k not in ORDER]

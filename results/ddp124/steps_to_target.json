@@ -1,0 +1,16 @@
+{
+ "_source": "logs_ddp124/<method>.log on opt2, read 2026-09-17; 124M GPT-2, FineWeb, 4-GPU DDP, batch 32x512, 150000 iterations, seed 0",
+ "_definition": "steps = the first evaluation at or below the target loss. Evaluations run every 1000 steps, so each number carries +-1000. The target is Muon's own final loss, 3.418, which Muon itself first reaches at 147k.",
+ "target": 3.418,
+ "eval_every": 1000,
+ "steps": {
+  "lionmuon_p2": 126000,
+  "lionmuon_p5": 127000,
+  "signmuon_p2": 136000,
+  "adamw": 137000,
+  "muonbp_1e-3": 142000,
+  "muon": 147000,
+  "dion_1e-3": null
+ },
+ "_dion": "Dion never reaches the target: its best loss over the full run is 3.4287 at lr 1e-3."
+}

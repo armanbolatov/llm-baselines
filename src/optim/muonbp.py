@@ -1,14 +1,22 @@
-"""MuonBP (arXiv:2510.16981), single-device version.
+"""MuonBP (arXiv:2510.16981).
 
 Newton-Schulz runs per column block on most steps (no cross-shard
 communication) and on the full matrix every P-th step, with lr scaled by
 block_lr_ratio on block steps. RMS scaling matches muon.py so tuned LRs
 transfer; non-2D parameters fall back to AdamW.
+
+Under DDP (WORLD_SIZE > 1) the momentum is replicated: block steps are
+computed locally on every rank with no communication, and the full step
+shards Newton-Schulz across ranks and all-reduces the update, exactly like
+muon.py. This gives MuonBP the same communication profile as LionMuon at the
+same period.
 """
 
 import math
+import os
 
 import torch
+import torch.distributed as dist
 
 from .muon import zeropower_via_newtonschulz5
 
@@ -54,6 +62,12 @@ class MuonBP(torch.optim.Optimizer):
             self.state[p]["use_muon"] = False
 
         self._step_count = 0
+        if "WORLD_SIZE" in os.environ:
+            self.world_size = int(os.environ["WORLD_SIZE"])
+            self.rank = int(os.environ["RANK"])
+        else:
+            self.world_size = 1
+            self.rank = 0
 
     @torch.no_grad()
     def step(self):
@@ -70,12 +84,19 @@ class MuonBP(torch.optim.Optimizer):
             lr = group["lr"] if is_full else group["block_lr_ratio"] * group["lr"]
             wd = group["weight_decay"]
 
-            for p in group["params"]:
-                if not self.state[p]["use_muon"]:
-                    continue
+            params = [p for p in group["params"]
+                      if self.state[p]["use_muon"] and p.grad is not None]
+            # Full step under DDP: shard NS across ranks and all-reduce the
+            # concatenated update (muon.py pattern). Block steps are local.
+            shard = is_full and self.world_size > 1
+            if shard:
+                updates_flat = torch.zeros(
+                    sum(p.numel() for p in params), device="cuda", dtype=torch.bfloat16
+                )
+            curr_idx = 0
+
+            for i, p in enumerate(params):
                 g = p.grad
-                if g is None:
-                    continue
                 if g.ndim > 2:
                     g = g.view(g.size(0), -1)
 
@@ -83,7 +104,15 @@ class MuonBP(torch.optim.Optimizer):
                 if "momentum_buffer" not in state:
                     state["momentum_buffer"] = torch.zeros_like(g)
                 buf = state["momentum_buffer"]
-                buf.mul_(beta).add_(g, alpha=1 - beta)  # EMA momentum
+                buf.mul_(beta).add_(g, alpha=1 - beta)  # EMA momentum (replicated)
+
+                if shard:
+                    if i % self.world_size == self.rank:
+                        u = zeropower_via_newtonschulz5(buf, steps=group["ns_steps"])
+                        u = u * (0.2 * math.sqrt(max(u.size(0), u.size(1))))
+                        updates_flat[curr_idx : curr_idx + p.numel()] = u.flatten()
+                    curr_idx += p.numel()
+                    continue
 
                 if is_full:
                     u = zeropower_via_newtonschulz5(buf, steps=group["ns_steps"])
@@ -100,6 +129,16 @@ class MuonBP(torch.optim.Optimizer):
                 if wd > 0:
                     p.data.mul_(1 - lr * wd)
                 p.data.add_(u.view_as(p.data).type_as(p.data), alpha=-lr)
+
+            if shard:
+                dist.all_reduce(updates_flat, op=dist.ReduceOp.SUM)
+                curr_idx = 0
+                for p in params:
+                    u = updates_flat[curr_idx : curr_idx + p.numel()].view_as(p.data).type_as(p.data)
+                    if wd > 0:
+                        p.data.mul_(1 - lr * wd)
+                    p.data.add_(u, alpha=-lr)
+                    curr_idx += p.numel()
 
             ############################
             #       AdamW backup       #
