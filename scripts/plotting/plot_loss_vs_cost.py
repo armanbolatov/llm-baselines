@@ -48,6 +48,7 @@ DDP_METHODS = {
     "signmuon_p5": ("SignMuon P=5", "lionmuon_p5"),
     "signum":      ("Signum (P=∞)", "adamw"),
     "lion":        ("Lion (P=∞)", "adamw"),
+    "dion_r2":     ("Dion, rank 1/2", "dion_r2"),
 }
 def label_355m(name):
     """Map a 355M experiment dir name to its legend label."""
@@ -89,7 +90,7 @@ def cells_355m(paths):
 
 def ddp_family(method):
     """'dion_3e-4' -> ('dion', '3e-4'); 'muon_3e-3' -> ('muon', '3e-3'); plain 'muon' ran at 1e-3."""
-    for fam in ("dion", "muonbp", "muon", "lion"):
+    for fam in ("dion_r2", "dion", "muonbp", "muon", "lion"):   # dion_r2 before dion: prefix
         if method == fam:
             return fam, "1e-3"
         if method.startswith(fam + "_"):

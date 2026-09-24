@@ -44,7 +44,7 @@ from optim.muonbp import MuonBP  # noqa: E402
 TRAIN_FLAGS = ("--config_format base --model base --n_layer 12 --n_head 12 --n_embd 768 "
                "--sequence_length 512 --weight_decay 0.1 --grad_clip 0.5 --muon_ns_steps 5 "
                "--lr 1e-3").split()
-METHODS = ["adamw", "muon", "lionmuon_p2", "lionmuon_p5", "muonbp_p5", "dion"]
+METHODS = ["adamw", "muon", "lionmuon_p2", "lionmuon_p5", "muonbp_p5", "dion", "dion_r2"]
 STEPS = 10          # one block: whole cycles of P=2 and P=5
 SEQ = 512
 
@@ -79,12 +79,14 @@ def build(method, raw):
                       block_lr_ratio=1.0, ns_steps=5, **backup)
     if method == "dion":
         return Dion(muon_params=params, lr=1e-3, rank_frac=0.25, **backup)
+    if method == "dion_r2":
+        return Dion(muon_params=params, lr=1e-3, rank_frac=0.5, **backup)
     raise ValueError(method)
 
 
 def train_step(model, raw, opt, method, x, y, ctx, distributed):
     if distributed:            # Dion syncs low-rank factors instead of gradients (see main.py)
-        model.require_backward_grad_sync = method != "dion"
+        model.require_backward_grad_sync = method not in ("dion", "dion_r2")
     with ctx:
         loss = model(x, targets=y)["loss"]
     loss.backward()

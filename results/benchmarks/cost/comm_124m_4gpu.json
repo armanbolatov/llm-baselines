@@ -1,80 +1,90 @@
 {
- "mode": "comm",
- "world_size": 4,
- "global_batch": 32,
- "methods": {
-  "adamw": {
-   "by_source": {
-    "grad_sync:float32": {
-     "MB_per_step": 495.922176,
-     "calls_per_step": 13.0
-    }
+   "date" : "2026-09-17 17:38 UTC",
+   "global_batch" : 32,
+   "gpu" : "NVIDIA A100 80GB PCIe",
+   "host" : "brain-lab.mipt.ru",
+   "methods" : {
+      "adamw" : {
+         "by_source" : {
+            "grad_sync:float32" : {
+               "MB_per_step" : 495.922176,
+               "calls_per_step" : 13
+            }
+         },
+         "total_MB_per_step" : 495.922176
+      },
+      "dion" : {
+         "by_source" : {
+            "optimizer:float32" : {
+               "MB_per_step" : 268.512256,
+               "calls_per_step" : 3
+            }
+         },
+         "total_MB_per_step" : 268.512256
+      },
+      "dion_r2" : {
+         "_source" : "cost_bench.py --mode comm on opt2, 2026-09-24 10:31 UTC (rank min(m,n)/2); raw JSON comm_124m_4gpu_r2.json is on opt2",
+         "by_source" : {
+            "optimizer:float32" : {
+               "MB_per_step" : 382.4,
+               "calls_per_step" : null
+            }
+         },
+         "total_MB_per_step" : 382.4
+      },
+      "lionmuon_p2" : {
+         "by_source" : {
+            "grad_sync:float32" : {
+               "MB_per_step" : 495.922176,
+               "calls_per_step" : 13
+            },
+            "optimizer:bfloat16" : {
+               "MB_per_step" : 85.327872,
+               "calls_per_step" : 0.5
+            }
+         },
+         "total_MB_per_step" : 581.250048
+      },
+      "lionmuon_p5" : {
+         "by_source" : {
+            "grad_sync:float32" : {
+               "MB_per_step" : 495.922176,
+               "calls_per_step" : 13
+            },
+            "optimizer:bfloat16" : {
+               "MB_per_step" : 34.1311488,
+               "calls_per_step" : 0.2
+            }
+         },
+         "total_MB_per_step" : 530.0533248
+      },
+      "muon" : {
+         "by_source" : {
+            "grad_sync:float32" : {
+               "MB_per_step" : 495.922176,
+               "calls_per_step" : 13
+            },
+            "optimizer:bfloat16" : {
+               "MB_per_step" : 170.655744,
+               "calls_per_step" : 1
+            }
+         },
+         "total_MB_per_step" : 666.57792
+      },
+      "muonbp_p5" : {
+         "by_source" : {
+            "grad_sync:float32" : {
+               "MB_per_step" : 495.922176,
+               "calls_per_step" : 13
+            },
+            "optimizer:bfloat16" : {
+               "MB_per_step" : 34.1311488,
+               "calls_per_step" : 0.2
+            }
+         },
+         "total_MB_per_step" : 530.0533248
+      }
    },
-   "total_MB_per_step": 495.922176
-  },
-  "muon": {
-   "by_source": {
-    "grad_sync:float32": {
-     "MB_per_step": 495.922176,
-     "calls_per_step": 13.0
-    },
-    "optimizer:bfloat16": {
-     "MB_per_step": 170.655744,
-     "calls_per_step": 1.0
-    }
-   },
-   "total_MB_per_step": 666.57792
-  },
-  "lionmuon_p2": {
-   "by_source": {
-    "grad_sync:float32": {
-     "MB_per_step": 495.922176,
-     "calls_per_step": 13.0
-    },
-    "optimizer:bfloat16": {
-     "MB_per_step": 85.327872,
-     "calls_per_step": 0.5
-    }
-   },
-   "total_MB_per_step": 581.250048
-  },
-  "lionmuon_p5": {
-   "by_source": {
-    "grad_sync:float32": {
-     "MB_per_step": 495.922176,
-     "calls_per_step": 13.0
-    },
-    "optimizer:bfloat16": {
-     "MB_per_step": 34.1311488,
-     "calls_per_step": 0.2
-    }
-   },
-   "total_MB_per_step": 530.0533247999999
-  },
-  "muonbp_p5": {
-   "by_source": {
-    "grad_sync:float32": {
-     "MB_per_step": 495.922176,
-     "calls_per_step": 13.0
-    },
-    "optimizer:bfloat16": {
-     "MB_per_step": 34.1311488,
-     "calls_per_step": 0.2
-    }
-   },
-   "total_MB_per_step": 530.0533247999999
-  },
-  "dion": {
-   "by_source": {
-    "optimizer:float32": {
-     "MB_per_step": 268.512256,
-     "calls_per_step": 3.0
-    }
-   },
-   "total_MB_per_step": 268.512256
-  }
- },
- "host": "brain-lab.mipt.ru",
- "gpu": "NVIDIA A100 80GB PCIe",
- "date": "2026-09-17 17:38 UTC"
+   "mode" : "comm",
+   "world_size" : 4
 }

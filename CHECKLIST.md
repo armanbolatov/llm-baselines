@@ -151,6 +151,45 @@ All scale runs transfer the 124M optimum (η_M, α, β₁, β₂) verbatim; no r
   states the real fallback, and the two run directories are renamed `BADLR_*` so the `fw355t_*`
   glob cannot pick them up. Relaunched on opt2 GPUs 0 and 6 at Sep 23 09:20 UTC, ~40 h, so
   **~Sep 25 01:00 UTC**. Rule: never let a run that takes sign steps leave `--sign_lr` unset.
+- **FineWeb baseline seeds run on q95 (started Sep 23 09:51 UTC, ~1.7 h each, six runs, done
+  ~20:00 UTC).** AdamW 1e-3, Lion 3e-4, Signum 3e-4, seeds 1 and 2. First result settles the
+  cross-machine worry: AdamW seed 1 on q95 = 3.5475 against seed 0 on the Windows box = 3.5482,
+  a gap of 0.0007, inside the 0.002 seed spread. So these seeds can go into the 124M figure
+  without a caveat. WikiText baseline seeds (same box) are already in: AdamW 2.8681/2.8677/2.8709,
+  Lion 2.8889/2.8965/2.8921, Signum 2.8947/2.8966/2.8967.
+- **opt2 at Sep 23 12:00 UTC (gateway was down 10:00 to 12:00).** Lion 355M rerun on GPU 6 at
+  4.15 s/iter, lands ~Sep 24 03:20 UTC. Signum 355M rerun moved from GPU 0 (14 s/iter) to GPU 5,
+  now 3.84 s/iter, resumed from its step-100 checkpoint, lands ~Sep 24 02:40 UTC. Lion 1e-4 DDP
+  driver (`ddp124_lion_lo_opt2.sh`) is a copy of the campaign driver and waits for the Signum
+  355M summary before taking four GPUs, so it starts ~03:00 UTC and lands ~12:00 UTC Sep 24;
+  this keeps our share of opt2 at two GPUs until then and five after. Start it earlier only if
+  six GPUs for nine hours is acceptable.
+- **FineWeb baseline seeds on q95, Sep 23 19:10 UTC:** AdamW 1e-3 seeds 1,2 = 3.5475, 3.5644
+  (seed 0 = 3.5482; seed 2 is +0.016, check its curve); Lion 3e-4 = 3.5635, 3.5688 (seed 0
+  3.5672); Signum 3e-4 seeds 1,2 = 3.5863, 3.6025 (seed 0 3.5898). All six landed Sep 23 20:20 UTC and are in
+  exps_124m/ and in the 124M figure. AdamW seed 2's curve is smooth (no jumps), it is a worse
+  draw. Means: AdamW 3.553 +- 0.009, Lion 3.567 +- 0.003, Signum 3.593 +- 0.009.
+- **opt2 gateway unreachable from Sep 23 19:05 UTC through at least Sep 24 08:30 UTC.** The
+  runs there are detached and unaffected, but the Dion rank-1/2 driver could not be uploaded;
+  a poll retries every two minutes and queues it the moment the gateway answers.
+- **Dion at rank min(m,n)/2 (the user's call, Sep 23):** `dion_r2_*` row in ddp_train_124m.sh,
+  `dion_r2` in cost_bench.py. Driver `ddp124_dion_r2_opt2.sh` on opt2 waits for the Lion 1e-4
+  summary, then runs `dion_r2_1e-3` on four GPUs (~9 h). Sequence on opt2: 355M reruns land
+  ~03:00 UTC Sep 24, Lion 1e-4 03:00 to 12:00, Dion r2 12:00 to 21:00 UTC Sep 24. Bytes and
+  FLOPs for rank 1/2 come from cost_bench (comm_124m_4gpu_r2.json, flops_124m_r2.json) so the
+  cost table can be filled before the run lands. Paper: Table tab:ddp has a pending row for it.
+- **355M Lion and Signum reruns landed Sep 24 ~08:00 UTC (sign lr 3e-4 confirmed in the
+  configs):** Lion 3.0502, Signum 3.0811. Order at 355M is now SignMuon P=2 3.009 < LionMuon
+  P=2 3.020 < LionMuon P=5 3.023 < Muon 3.038 < Lion 3.050 < AdamW 3.064 < SignMuon P=5 3.072
+  < Signum 3.081. The abstract's "than Lion and Signum" no longer needs the "at 124M" limit.
+- **Lion 1e-4 DDP** started Sep 24 08:06 UTC on opt2 GPUs 0,2,3,5 (3.749 at 41k, against 3.836
+  for the 3e-4 run at 40k), lands ~17:00 UTC. **Dion rank 1/2** driver is queued behind it
+  (pid on opt2, `ddp124_dion_r2_opt2.sh`), lands ~02:00 UTC Sep 25. Its cost rows are measured:
+  382.4 MB per step (rank 1/4: 268.5) and 1.3491e13 FLOPs per step (rank 1/4: 1.3360e13), added
+  to comm_124m_4gpu.json and flops_124m.json by hand from the opt2 logs since the gateway
+  dropped before the raw files could be copied.
+- Steps to Muon's DDP loss from the logs: LionMuon P=1 133k, SignMuon P=5 139k, Muon 3e-3 was
+  at 3.756 when stopped at 96k.
 - **BUG. 124M DDP Lion is unstable, not misconfigured.** Its flags do carry `--sign_lr 3e-4`.
   The curve spikes (3.836 at 40k, 4.477 at 80k, 3.895 at 139k) while signum, signmuon_p5 and
   adamw descend monotonically, so the 64k rate does not survive 150k steps at the DDP batch.

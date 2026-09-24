@@ -44,6 +44,7 @@ flags() { case $1 in
   # Baselines from the papers, untuned at this horizon, so a small LR sweep around Muon's optimum.
   # Dion: rank r = min(m,n)/4, error feedback 0.05 (mu = 0.95), local momentum + factor all-reduce.
   # MuonBP: 4 column blocks (= 4-way TP), full step every 5, block updates RMS-scaled by block dims.
+  dion_r2_*)   echo "--opt dion --muon_lr_factor ${1#dion_r2_} --dion_rank_frac 0.5";;   # rank min(m,n)/2, their other setting
   dion_*)      echo "--opt dion --muon_lr_factor ${1#dion_} --dion_rank_frac 0.25";;
   muonbp_*)    echo "--opt muonbp --muon_lr_factor ${1#muonbp_} --muonbp_blocks 4 --muonbp_period 5 --muonbp_block_lr_ratio 1.0 --momentum 0.9";;
   *) echo "unknown method $1" >&2; exit 1;; esac; }
