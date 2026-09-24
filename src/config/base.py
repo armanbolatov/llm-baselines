@@ -133,6 +133,10 @@ def parse_args(base_parser, args, namespace):
     parser.add_argument("--max_precond_dim", default=10000, type=int)
     parser.add_argument("--merge_dims", default=False, type=bool)
     parser.add_argument("--precondition_1d", default=False, type=bool)
+    # Two reviewer questions, answered by ablation at 124M: a random period with the same mean
+    # as the fixed one, and Lion instead of AdamW on the 1D parameters (lion_muon only).
+    parser.add_argument("--muon_random_period", action="store_true")
+    parser.add_argument("--one_d_lion", action="store_true")
     parser.add_argument("--normalize_grads", default=False, type=bool)
     parser.add_argument("--soap_data_format", default="channels_first", type=str)
     parser.add_argument("--correct_bias", default=True, type=bool)

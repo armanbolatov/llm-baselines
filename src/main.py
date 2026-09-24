@@ -205,6 +205,8 @@ def main(args, parser):
             nesterov=args.nesterov,
             weight_decay=args.weight_decay,
             srank_alpha=args.srank_alpha,
+            random_period=getattr(args, "muon_random_period", False),
+            one_d_lion=getattr(args, "one_d_lion", False),
             adamw_params=None,
             adamw_lr=args.lr,
             adamw_betas=(0.8, 0.999),

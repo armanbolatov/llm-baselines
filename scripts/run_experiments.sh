@@ -106,6 +106,14 @@ seeds)   # columns: P eta_M alpha beta1 beta2 label
       run ${P}t_${lbl}_p${p} $p $mlr $sl $b1 $b2 $s
     done
   done ;;
+ablate)  # two reviewer questions at the tuned FineWeb rates: a random period with the same
+         # mean as the fixed one, and Lion instead of AdamW on the 1D parameters
+  for s in $SEEDS; do
+    run ${P}x_lionmuon_p2_randP  2 1e-3 1.00e-04 0.9 0.99 $s --muon_random_period
+    run ${P}x_lionmuon_p5_randP  5 3e-3 1.00e-04 0.9 0.99 $s --muon_random_period
+    run ${P}x_lionmuon_p2_lion1d 2 1e-3 1.00e-04 0.9 0.99 $s --one_d_lion
+    run ${P}x_lionmuon_p5_lion1d 5 3e-3 1.00e-04 0.9 0.99 $s --one_d_lion
+  done ;;
 extra)
   run ${P}_muon_nesterov 1 1e-3 - 0.9 0.9 0 --nesterov True
   echo "[$(date +%H:%M)] dion"

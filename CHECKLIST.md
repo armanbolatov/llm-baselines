@@ -190,6 +190,20 @@ All scale runs transfer the 124M optimum (η_M, α, β₁, β₂) verbatim; no r
   dropped before the raw files could be copied.
 - Steps to Muon's DDP loss from the logs: LionMuon P=1 133k, SignMuon P=5 139k, Muon 3e-3 was
   at 3.756 when stopped at 96k.
+- **GPU 0 on opt2 freed for Vladimir Aletov (asked Sep 24 11:07 UTC, needs it for 1 to 1.5
+  days).** Our Lion 1e-4 DDP run was on GPUs 0,2,3,5; stopped at 11:18 UTC and resumed from its
+  latest checkpoint (at most 500 steps lost) on GPUs 2,5,6,7. Both drivers
+  (`ddp124_lion_lo_opt2.sh`, `ddp124_dion_r2_opt2.sh`) now exclude GPU 0 in their pick
+  (`$1!=0` in the awk filter). Lion 1e-4 lands ~17:30 UTC, Dion rank 1/2 ~02:30 UTC Sep 25.
+  Do not put anything on GPU 0 before Sep 26.
+- **Two reviewer ablations on q95 (Sep 24 ~13:30 UTC), 124M FineWeb, 64k steps, tuned rates:**
+  `--muon_random_period` (Muon step with probability 1/P, same mean as the fixed period;
+  answers "probabilistic P instead of periodic") and `--one_d_lion` (1D parameters take the
+  Lion step at the sign rate and betas instead of AdamW; answers NQtP W4). Runs
+  `fw124x_lionmuon_p{2,5}_{randP,lion1d}_seed0`, ~1.7 h each, all done ~20:30 UTC. Compare
+  with the tuned LionMuon P=2 and P=5 FineWeb runs (3.498, three seeds, spread 0.002).
+  Code: flags in config/base.py, main.py passes them, lion_muon.py implements both, and
+  run_experiments.sh has an `ablate` mode. q95's previous code is in ~/lion-muon_backup_<date>.
 - **BUG. 124M DDP Lion is unstable, not misconfigured.** Its flags do carry `--sign_lr 3e-4`.
   The curve spikes (3.836 at 40k, 4.477 at 80k, 3.895 at 139k) while signum, signmuon_p5 and
   adamw descend monotonically, so the 64k rate does not survive 150k steps at the DDP batch.

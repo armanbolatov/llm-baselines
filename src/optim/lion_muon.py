@@ -14,6 +14,7 @@ Both steps share the same momentum buffer m (updated with beta2).
 """
 
 import os
+import random
 
 import torch
 import torch.distributed as dist
@@ -54,6 +55,8 @@ class LionMuon(torch.optim.Optimizer):
         nesterov=False,
         weight_decay=0.0,
         srank_alpha=0.0,
+        random_period=False,
+        one_d_lion=False,
         adamw_params=None,
         adamw_lr=3e-4,
         adamw_betas=(0.8, 0.999),
@@ -75,6 +78,8 @@ class LionMuon(torch.optim.Optimizer):
             nesterov=nesterov,
             weight_decay=weight_decay,
             srank_alpha=srank_alpha,
+            random_period=random_period,
+            one_d_lion=one_d_lion,
             adamw_lr=adamw_lr,
             adamw_lr_ratio=adamw_lr / lr if lr > 0 else 1.0,
             adamw_betas=adamw_betas,
@@ -93,6 +98,7 @@ class LionMuon(torch.optim.Optimizer):
             self.state[p]["use_muon"] = False
 
         self._step_count = 0
+        self._period_rng = random.Random(1234)   # only used with random_period
         self._diag = {
             "srank_ratios": [],
             "update_types": [],
@@ -111,6 +117,10 @@ class LionMuon(torch.optim.Optimizer):
 
     def _is_muon_step(self):
         k = self.param_groups[0]["muon_every_k"]
+        if k > 1 and self.param_groups[0].get("random_period", False):
+            # a Muon step with probability 1/k, the same mean as the fixed period; the generator
+            # is seeded once, so every rank draws the same sequence under DDP
+            return self._period_rng.random() < 1.0 / k
         return k <= 1 or (self._step_count % k) == 0
 
     def get_cumulative_diagnostics(self):
@@ -281,6 +291,25 @@ class LionMuon(torch.optim.Optimizer):
             beta1_aw, beta2_aw = group["adamw_betas"]
             eps = group["adamw_eps"]
             wd = group["adamw_wd"]
+
+            if group.get("one_d_lion", False):
+                # ablation: the 1D parameters take the same Lion step as the matrices do on
+                # sign steps, at the sign-step rate and betas, instead of AdamW
+                lion_lr_1d = group["lion_lr_ratio"] * group["lr"]
+                b1, b2 = group["beta1"], group["beta2"]
+                for p in params:
+                    g = p.grad
+                    assert g is not None
+                    state = self.state[p]
+                    if "moment1" not in state:
+                        state["moment1"] = torch.zeros_like(g)
+                    m1d = state["moment1"]
+                    u = (m1d * b1 + g * (1 - b1)).sign()
+                    m1d.mul_(b2).add_(g, alpha=1 - b2)
+                    if wd > 0:
+                        p.data.mul_(1 - lion_lr_1d * wd)
+                    p.data.add_(u, alpha=-lion_lr_1d)
+                params = []
 
             for p in params:
                 g = p.grad
