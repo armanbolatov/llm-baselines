@@ -204,6 +204,12 @@ All scale runs transfer the 124M optimum (η_M, α, β₁, β₂) verbatim; no r
   with the tuned LionMuon P=2 and P=5 FineWeb runs (3.498, three seeds, spread 0.002).
   Code: flags in config/base.py, main.py passes them, lion_muon.py implements both, and
   run_experiments.sh has an `ablate` mode. q95's previous code is in ~/lion-muon_backup_<date>.
+- **Ablations done on q95 (Sep 25 11:19 UTC), and with three seeds, because run_experiments.sh
+  takes SEEDS from its 4th argument, not the environment.** Random period: P=2 3.4989 +- 0.0014,
+  P=5 3.4992 +- 0.0016, the same as the fixed period (3.498 +- 0.002). Lion on the 1D
+  parameters: P=2 3.5346 +- 0.0007, P=5 3.5378 +- 0.0012, i.e. 0.04 worse, so the AdamW
+  fallback matters. Numbers in results/ablations/ablate_124m_fineweb.json; paper: Appendix
+  table tab:ablate plus one sentence in 5.3 and one in the implementation notes.
 - **BUG. 124M DDP Lion is unstable, not misconfigured.** Its flags do carry `--sign_lr 3e-4`.
   The curve spikes (3.836 at 40k, 4.477 at 80k, 3.895 at 139k) while signum, signmuon_p5 and
   adamw descend monotonically, so the 64k rate does not survive 150k steps at the DDP batch.

@@ -1,0 +1,11 @@
+{
+ "_source": "q95 (RTX 5090), exps/fw124x_*_seed{0,1,2}/summary.json, 2026-09-24 13:02 to 2026-09-25 11:19 UTC; 124M GPT-2 on FineWeb sample-10BT, 64000 steps, batch 32x512, tuned LionMuon rates (P=2: 1e-3/1e-4, P=5: 3e-3/1e-4, betas 0.9/0.99)",
+ "_flags": {"randP": "--muon_random_period: a Muon step with probability 1/P at every iteration (same mean spacing)", "lion1d": "--one_d_lion: 1D parameters take the Lion step at the sign rate and betas instead of AdamW"},
+ "_reference_fixed_period": {"lionmuon_p2": [3.498, 0.002], "lionmuon_p5": [3.498, 0.002]},
+ "runs": {
+  "lionmuon_p2_randP":  [3.5005, 3.4977, 3.4986],
+  "lionmuon_p5_randP":  [3.5009, 3.4978, 3.4990],
+  "lionmuon_p2_lion1d": [3.5352, 3.5338, 3.5348],
+  "lionmuon_p5_lion1d": [3.5391, 3.5367, 3.5377]
+ }
+}

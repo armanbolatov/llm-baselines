@@ -4,6 +4,9 @@
  "target": 3.418,
  "eval_every": 1000,
  "steps": {
+  "lionmuon_p1": 133000,
+  "signmuon_p5": 139000,
+  "lion_1e-4": 140000,
   "lionmuon_p2": 126000,
   "lionmuon_p5": 127000,
   "signmuon_p2": 136000,
