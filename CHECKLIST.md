@@ -210,6 +210,13 @@ All scale runs transfer the 124M optimum (η_M, α, β₁, β₂) verbatim; no r
   parameters: P=2 3.5346 +- 0.0007, P=5 3.5378 +- 0.0012, i.e. 0.04 worse, so the AdamW
   fallback matters. Numbers in results/ablations/ablate_124m_fineweb.json; paper: Appendix
   table tab:ablate plus one sentence in 5.3 and one in the implementation notes.
+- **Sep 25 final state.** 355M LionMuon P=5 seed 1 = 3.0211 (seed 0 3.0227), landed 13:05 UTC on
+  opt. Paper now shows ONE seed (seed 0) for every 355M method in figure and table, by the
+  authors' decision; the extra seeds (Muon x3, SignMuon P=2 x3, LionMuon P=2 x2, P=5 x2) stay in
+  results/scaling/*.json. DDP Lion 1e-4 = 3.4150 (reaches Muon's loss at 140k). Dion rank 1/2
+  unfinished (3.770 at 68k, within 0.02 of rank 1/4 at the same step), reported as partial.
+  Section 5 restructured: 5.2 single-GPU (124M then 355M), 5.3 data-parallel, split figures
+  as wrapfigures, cost table and a cost-to-reach-Muon table in the main text. Overleaf c2c73b3.
 - **BUG. 124M DDP Lion is unstable, not misconfigured.** Its flags do carry `--sign_lr 3e-4`.
   The curve spikes (3.836 at 40k, 4.477 at 80k, 3.895 at 139k) while signum, signmuon_p5 and
   adamw descend monotonically, so the 64k rate does not survive 150k steps at the DDP batch.

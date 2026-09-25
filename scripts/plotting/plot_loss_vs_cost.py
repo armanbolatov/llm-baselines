@@ -80,6 +80,8 @@ def cells_355m(paths):
     for r in by_name.values():
         if r["scale"] != "355m":
             continue
+        if os.environ.get("SEED0_ONLY") and not r["name"].endswith("_seed0"):
+            continue                     # one seed per method, so every point is drawn the same way
         label, flops = label_355m(r["name"])
         if label is None:
             continue
@@ -187,6 +189,23 @@ def main(paths):
     out = os.environ.get("OUT_PNG", "results/figures/loss_vs_cost_355m_ddp.png")
     fig.savefig(out, dpi=150, bbox_inches="tight")
     print(f"{out} written  (right panel x = {mode})")
+    # the same two panels as separate figures, sized for a wrapfigure: legend below in three columns
+    for name, cells, xl, title in [
+            ("loss_vs_cost_ddp124", cells_ddp(runs_ddp(ddp_file, cost, per_run)), xlabel,
+             "124M, 2.46B tokens, 4-GPU data parallel"),
+            ("loss_vs_flops_355m", cells_355m(paths), "Total Training FLOPs",
+             "355M, 8.2B tokens, transferred hyperparameters")]:
+        f1, ax = plt.subplots(figsize=(5.4, 3.6))
+        hs = draw(ax, cells, xl, title)
+        if name.endswith("355m"):
+            ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
+        ax.set_ylabel("Best Val Loss", fontsize=11)
+        ordered = [hs[k] for k in ORDER if k in hs] + [h for k, h in hs.items() if k not in ORDER]
+        f1.legend(handles=ordered, ncol=3, loc="lower center", fontsize=8, frameon=False,
+                  bbox_to_anchor=(0.5, -0.02))
+        f1.tight_layout(rect=[0, 0.10 + 0.05 * ((len(ordered) - 1) // 3), 1, 1])
+        f1.savefig(f"results/figures/{name}.png", dpi=150, bbox_inches="tight")
+        print(f"results/figures/{name}.png written")
     runs = runs_ddp(ddp_file, cost, per_run)
     best = best_lrs(runs)
     for (fam, lr), (x, vals, running) in sorted(runs.items()):
