@@ -2,7 +2,7 @@
    "date" : "2026-09-17 17:38 UTC",
    "global_batch" : 32,
    "gpu" : "NVIDIA A100 80GB PCIe",
-   "host" : "brain-lab.mipt.ru",
+   "host" : "4xA100 PCIe node",
    "methods" : {
       "adamw" : {
          "by_source" : {

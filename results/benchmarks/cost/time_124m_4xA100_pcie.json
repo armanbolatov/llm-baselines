@@ -352,7 +352,7 @@
    "muonbp_p5": 1.4161823272705079
   }
  ],
- "host": "brain-lab.mipt.ru",
+ "host": "4xA100 PCIe node",
  "gpu": "NVIDIA A100 80GB PCIe",
  "date": "2026-09-17 18:22 UTC"
 }

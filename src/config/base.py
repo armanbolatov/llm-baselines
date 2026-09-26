@@ -82,41 +82,10 @@ def parse_args(base_parser, args, namespace):
         default="adamw",
         choices=[
             "adamw",
+            "muon",
+            "lion_muon",
             "dion",
             "muonbp",
-            "sgd",
-            "taia",
-            "muon",
-            "sign_muon",
-            "lion_muon",
-            "adamuon",
-            "rmsspectral",
-            "rmsspectral-sania",
-            "adam-sania",
-            "soap",
-            "soap-sania",
-            "shampoo",
-            "shampoo-sania",
-            "ademamix",
-            "ademamix2",
-            "lion",
-            "sf-adamw",
-            "sf-sgd",
-            "adam-mini",
-            "signsgd",
-            "signum",
-            "sgdf",
-            "prodigy",
-            "sophiag",
-            "shampoo",
-            "adopt",
-            "clip-adagrad",
-            "clip-adagrad-delay-eta",
-            "clip-adam",
-            "clip-adam-delay-eta",
-            "mars",
-            "adafactor",
-            "lamb",
         ],
     )
     parser.add_argument("--batch_size", default=50, type=int)
@@ -210,20 +179,10 @@ def parse_args(base_parser, args, namespace):
     parser.add_argument("--datasets_dir", type=str, default="~/datasets/")
     parser.add_argument(
         "--dataset",
-        default="slimpajama",
+        default="fineweb",
         choices=[
             "wikitext",
-            "shakespeare-char",
-            "arxiv",
-            "arxiv2000",
-            "arxiv+wiki",
-            "openwebtext2",
-            "redpajama",
-            "slimpajama",
-            "slimpajama_chunk1",
-            "redpajamav2",
             "fineweb",
-            "finewebedu",
         ],
     )
     parser.add_argument(
@@ -237,11 +196,9 @@ def parse_args(base_parser, args, namespace):
     # Model params
     parser.add_argument(
         "--model",
-        default="llama",
+        default="base",
         choices=[
             "base",
-            "llama",
-            "test",
         ],
     )
     parser.add_argument("--parallel_block", action="store_true")

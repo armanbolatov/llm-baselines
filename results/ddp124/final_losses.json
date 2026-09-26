@@ -1,5 +1,5 @@
 {
-  "_source": "exps_ddp124/<run>/summary.json on ubuntu-gpu-pod-vv-h200, 2026-09-18; 124M GPT-2, FineWeb, 4-GPU DDP, batch 32x512, 150000 iterations = 2.46B tokens (1x Chinchilla), hyperparameters transferred from the tuned 124M grid",
+  "_source": "exps_ddp124/<run>/summary.json on the 4xH200 NVLink node, 2026-09-18; 124M GPT-2, FineWeb, 4-GPU DDP, batch 32x512, 150000 iterations = 2.46B tokens (1x Chinchilla), hyperparameters transferred from the tuned 124M grid",
   "_stopped": "Three learning-rate checks were stopped on Sep 18 when the campaign gave its GPUs back, and are not listed: Dion 3e-4 at 20k, MuonBP 3e-4 at 1k, Muon 3e-3 at 96k of 150k. Checkpoints are on opt2.",
   "_lion": "Lion at its 64k rate 3e-4 spikes at this horizon (3.84 at 40k, 4.48 at 80k, 3.88 final) and is not plotted; at 1e-4 it is stable and reaches 3.4150, which is what the figure and Table 4 use. Both runs are on opt2 under exps_ddp124/.",
   "_eval": "loss is the best of the training-time evaluations, which score 256 windows of 512 tokens (131k tokens) of the held-out split. Re-scoring four finished runs on 4.1M tokens of the same split shifts every loss by +0.008, see results/ddp124/fullval.json",
