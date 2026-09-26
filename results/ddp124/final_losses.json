@@ -16,6 +16,7 @@
     {"method": "lionmuon_p1", "seed": 0, "iters": 150000, "loss": 3.3906, "done": true},
     {"method": "signmuon_p5", "seed": 0, "iters": 150000, "loss": 3.4023, "done": true},
     {"method": "lion_1e-4", "seed": 0, "iters": 150000, "loss": 3.4150, "done": true},
+    {"method": "dion_r2_1e-3", "seed": 0, "iters": 150000, "loss": 3.4110, "done": true},
     {"method": "signum", "seed": 0, "iters": 150000, "loss": 3.4287, "done": true}
   ]
 }

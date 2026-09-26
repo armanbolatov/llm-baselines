@@ -217,6 +217,11 @@ All scale runs transfer the 124M optimum (η_M, α, β₁, β₂) verbatim; no r
   unfinished (3.770 at 68k, within 0.02 of rank 1/4 at the same step), reported as partial.
   Section 5 restructured: 5.2 single-GPU (124M then 355M), 5.3 data-parallel, split figures
   as wrapfigures, cost table and a cost-to-reach-Muon table in the main text. Overleaf c2c73b3.
+- **Dion rank 1/2 finished (Sep 26 ~08:00 UTC, deadline was extended):** 3.4110 at 382 MB per
+  step, reaches Muon's 3.418 at 141k. Better than rank 1/4 (3.429), level with MuonBP (3.414)
+  and Muon (3.418), still 0.035 above LionMuon P=5. In the DDP figure as a second, lighter Dion
+  diamond, in tab:ddp and in the reach table (no step time measured for it). Our GPU footprint
+  on opt2 is now zero.
 - **BUG. 124M DDP Lion is unstable, not misconfigured.** Its flags do carry `--sign_lr 3e-4`.
   The curve spikes (3.836 at 40k, 4.477 at 80k, 3.895 at 139k) while signum, signmuon_p5 and
   adamw descend monotonically, so the 64k rate does not survive 150k steps at the DDP batch.

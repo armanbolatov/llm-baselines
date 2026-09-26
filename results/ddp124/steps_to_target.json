@@ -4,6 +4,7 @@
  "target": 3.418,
  "eval_every": 1000,
  "steps": {
+  "dion_r2_1e-3": 141000,
   "lionmuon_p1": 133000,
   "signmuon_p5": 139000,
   "lion_1e-4": 140000,
@@ -15,5 +16,5 @@
   "muon": 147000,
   "dion_1e-3": null
  },
- "_dion": "Dion never reaches the target: its best loss over the full run is 3.4287 at lr 1e-3."
+ "_dion": "Dion at rank 1/4 never reaches the target (best 3.4287 at lr 1e-3); at rank 1/2 it reaches it at 141k and ends at 3.4110 (382 MB per step)."
 }

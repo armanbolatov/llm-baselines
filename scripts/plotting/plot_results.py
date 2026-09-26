@@ -85,6 +85,7 @@ def compute_flops(n_layer, n_embd, seq_len, batch_size, iterations, opt, K=1, ns
 
 STYLE_EXTRA = {                      # baselines that are not part of the two families
     'Dion':         {'color': '#2e8b57', 'marker': 'D'},
+    'Dion, rank 1/2': {'color': '#8fd19e', 'marker': 'D'},   # same family, lighter: it sends more
     'MuonBP (P=5)': {'color': '#e69500', 'marker': 'v'},
 }
 POINT_KW = dict(s=110, zorder=5, alpha=0.9, edgecolor='black', linewidth=0.5)
