@@ -96,7 +96,7 @@ LABEL_FS, TITLE_FS = 11, 12
 
 def style_for(label):
     """Marker and colour for a legend label, from either table."""
-    s = STYLE.get(label)
+    s = STYLE.get(label) or STYLE_EXTRA.get(label)     # exact match first: "Dion, rank 1/2" is not "Dion"
     if s is None:
         key = next((k for k in STYLE_EXTRA if label.startswith(k)), None)
         s = STYLE_EXTRA[key] if key else None
