@@ -151,3 +151,6 @@ exps*/*/ckpts/
 CHECKLIST.md
 STATUS.md
 results/lecture_*.pdf
+
+# the arXiv submission package, not part of the code release
+*.zip
