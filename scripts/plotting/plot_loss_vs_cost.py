@@ -163,7 +163,7 @@ def draw(ax, cells, xlabel, title):
         ax.scatter(x, st.mean(vals), marker=s["marker"],
                    color=s["color"] if done else "white", **kw)
         if len(vals) > 1:
-            ax.errorbar(x, st.mean(vals), yerr=st.stdev(vals), color=s["color"], **ERR_KW)
+            ax.errorbar(x, st.mean(vals), yerr=st.stdev(vals), color="black", **ERR_KW)
         handles[label] = legend_handle(label)
     finish_axis(ax, xlabel, title)
     return handles
