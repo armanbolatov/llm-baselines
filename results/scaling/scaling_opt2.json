@@ -6,3 +6,10 @@
 {"machine":"opt2","scale":"720m","name":"fw720t_signmuon_p1_seed0","best":2.9301,"done":true}
 {"machine":"opt2","scale":"355m","name":"fw355t_lionmuon_p10000000_seed0","best":3.0502,"done":true}
 {"machine":"opt2","scale":"355m","name":"fw355t_signmuon_p10000000_seed0","best":3.0811,"done":true}
+{"machine":"opt2","scale":"355m","name":"fw355t_lionmuon_p2_seed2","best":3.0200,"done":true}
+{"machine":"opt2","scale":"355m","name":"fw355t_signmuon_p5_seed1","best":3.0727,"done":true}
+{"machine":"opt2","scale":"355m","name":"fw355t_signmuon_p5_seed2","best":3.0716,"done":true}
+{"machine":"opt2","scale":"355m","name":"fw355t_lionmuon_p10000000_seed1","best":3.0482,"done":true}
+{"machine":"opt2","scale":"355m","name":"fw355t_lionmuon_p10000000_seed2","best":3.0498,"done":true}
+{"machine":"opt2","scale":"355m","name":"fw355t_signmuon_p10000000_seed1","best":3.0785,"done":true}
+{"machine":"opt2","scale":"355m","name":"fw355t_signmuon_p10000000_seed2","best":3.0781,"done":true}

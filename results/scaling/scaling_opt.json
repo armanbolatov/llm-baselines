@@ -7,3 +7,6 @@
 {"machine":"opt","scale":"355m","name":"fw355t_signmuon_p2_seed1","best":3.0092,"done":true}
 {"machine":"opt","scale":"355m","name":"fw355t_signmuon_p2_seed2","best":3.0089,"done":true}
 {"machine":"opt","scale":"355m","name":"fw355t_lionmuon_p5_seed1","best":3.0211,"done":true}
+{"machine":"opt","scale":"355m","name":"fw355t_lionmuon_p5_seed2","best":3.0193,"done":true}
+{"machine":"opt","scale":"355m","name":"fw355b_adamw_lr1e-3_seed1","best":3.0788,"done":true}
+{"machine":"opt","scale":"355m","name":"fw355b_adamw_lr1e-3_seed2","best":3.0614,"done":true}
