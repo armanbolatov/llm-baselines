@@ -17,6 +17,23 @@
     {"method": "signmuon_p5", "seed": 0, "iters": 150000, "loss": 3.4023, "done": true},
     {"method": "lion_1e-4", "seed": 0, "iters": 150000, "loss": 3.4150, "done": true},
     {"method": "dion_r2_1e-3", "seed": 0, "iters": 150000, "loss": 3.4110, "done": true},
-    {"method": "signum", "seed": 0, "iters": 150000, "loss": 3.4287, "done": true}
+    {"method": "signum", "seed": 0, "iters": 150000, "loss": 3.4287, "done": true},
+    {"method": "adamw", "seed": 1, "iters": 150000, "loss": 3.4049, "done": true},
+    {"method": "adamw", "seed": 2, "iters": 150000, "loss": 3.4038, "done": true},
+    {"method": "lionmuon_p2", "seed": 1, "iters": 150000, "loss": 3.3727, "done": true},
+    {"method": "lionmuon_p2", "seed": 2, "iters": 150000, "loss": 3.3715, "done": true},
+    {"method": "lionmuon_p5", "seed": 1, "iters": 150000, "loss": 3.3758, "done": true},
+    {"method": "lionmuon_p5", "seed": 2, "iters": 150000, "loss": 3.3747, "done": true},
+    {"method": "muon", "seed": 1, "iters": 150000, "loss": 3.4123, "done": true},
+    {"method": "muon", "seed": 2, "iters": 150000, "loss": 3.4148, "done": true},
+    {"method": "signmuon_p2", "seed": 1, "iters": 150000, "loss": 3.3921, "done": true},
+    {"method": "signmuon_p2", "seed": 2, "iters": 150000, "loss": 3.3936, "done": true},
+    {"method": "signmuon_p5", "seed": 1, "iters": 150000, "loss": 3.4016, "done": true},
+    {"method": "signmuon_p5", "seed": 2, "iters": 150000, "loss": 3.4001, "done": true},
+    {"method": "dion_1e-3", "seed": 1, "iters": 150000, "loss": 3.4259, "done": true},
+    {"method": "lion_1e-4", "seed": 1, "iters": 150000, "loss": 3.4204, "done": true},
+    {"method": "lion_1e-4", "seed": 2, "iters": 150000, "loss": 3.4188, "done": true},
+    {"method": "lionmuon_p1", "seed": 1, "iters": 150000, "loss": 3.3917, "done": true},
+    {"method": "signum", "seed": 1, "iters": 150000, "loss": 3.4263, "done": true}
   ]
 }
