@@ -1,0 +1,104 @@
+{
+   "_definition" : "mean_curve_k: the first evaluation at or below the target on the mean of the three seed curves; per_seed_k: the same for each seed separately against the same target. The target is the minimum of Muon's mean curve. Checked: seed 0 alone against the old target 3.418 reproduces every value of steps_to_target.json.",
+   "_source" : "logs_ddp124/*.log (seed 0, 4xH200 NVLink) and logs_ddp124_seeds/*.log (seeds 1 and 2; Lion, Signum, LionMuon P=1 and Dion at rank 1/4 on 4xA100 PCIe, the rest on 4xH200), read 2026-10-16; evaluations every 1000 steps, losses at the 3 decimals the logs print",
+   "eval_every" : 1000,
+   "steps_k" : {
+      "adamw" : {
+         "mean_curve_k" : 138,
+         "per_seed_k" : [
+            139,
+            138,
+            137
+         ]
+      },
+      "dion_1e-3" : {
+         "mean_curve_k" : null,
+         "per_seed_k" : [
+            null,
+            null,
+            null
+         ]
+      },
+      "dion_r2_1e-3" : {
+         "mean_curve_k" : 142,
+         "per_seed_k" : [
+            143,
+            141,
+            141
+         ]
+      },
+      "lion_1e-4" : {
+         "mean_curve_k" : null,
+         "per_seed_k" : [
+            147,
+            null,
+            null
+         ]
+      },
+      "lionmuon_p1" : {
+         "mean_curve_k" : 135,
+         "per_seed_k" : [
+            135,
+            134,
+            135
+         ]
+      },
+      "lionmuon_p2" : {
+         "mean_curve_k" : 127,
+         "per_seed_k" : [
+            127,
+            126,
+            126
+         ]
+      },
+      "lionmuon_p5" : {
+         "mean_curve_k" : 128,
+         "per_seed_k" : [
+            128,
+            128,
+            128
+         ]
+      },
+      "muon" : {
+         "mean_curve_k" : 149,
+         "per_seed_k" : [
+            null,
+            144,
+            146
+         ]
+      },
+      "muonbp_1e-3" : {
+         "mean_curve_k" : 142,
+         "per_seed_k" : [
+            146,
+            143,
+            140
+         ]
+      },
+      "signmuon_p2" : {
+         "mean_curve_k" : 137,
+         "per_seed_k" : [
+            137,
+            136,
+            136
+         ]
+      },
+      "signmuon_p5" : {
+         "mean_curve_k" : 140,
+         "per_seed_k" : [
+            140,
+            140,
+            139
+         ]
+      },
+      "signum" : {
+         "mean_curve_k" : null,
+         "per_seed_k" : [
+            null,
+            null,
+            null
+         ]
+      }
+   },
+   "target" : 3.415
+}
