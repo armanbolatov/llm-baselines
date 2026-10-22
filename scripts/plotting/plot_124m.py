@@ -49,7 +49,8 @@ def runs(tag):
     cells = {}
     for src in ("exps", "exps_124m"):
         for f in glob.glob(f"{src}/{tag}124g_*_i64k_seed0/summary.json"):
-            m = re.match(rf"{tag}124g_p(\d+)_.*_b(09-09|09-099)_i64k_seed0$", f.split("/")[1])
+            m = re.match(rf"{tag}124g_p(\d+)_.*_b(09-09|09-099)_i64k_seed0$",
+                         os.path.basename(os.path.dirname(f)))
             v = best(f) if m else None
             if v is None:
                 continue
@@ -91,7 +92,7 @@ for ax, (tag, title) in zip(axes, [("fw", "FineWeb"), ("wt", "WikiText-103")]):
         s = style_for(label)
         ax.scatter(flops, st.mean(vals), color=s["color"], marker=s["marker"], **POINT_KW)
         if len(vals) > 1:
-            ax.errorbar(flops, st.mean(vals), yerr=st.stdev(vals), color=s["color"], **ERR_KW)
+            ax.errorbar(flops, st.mean(vals), yerr=st.stdev(vals), **ERR_KW)
         handles.setdefault(label, legend_handle(label))
     finish_axis(ax, "Total Training FLOPs", title)
     ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))

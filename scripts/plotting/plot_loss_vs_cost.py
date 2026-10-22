@@ -163,8 +163,7 @@ def draw(ax, cells, xlabel, title):
         ax.scatter(x, st.mean(vals), marker=s["marker"],
                    color=s["color"] if done else "white", **kw)
         if len(vals) > 1:
-            # black and above the marker: the seed spread is often smaller than the marker itself
-            ax.errorbar(x, st.mean(vals), yerr=st.stdev(vals), color="black", **{**ERR_KW, "zorder": 6})
+            ax.errorbar(x, st.mean(vals), yerr=st.stdev(vals), **ERR_KW)
         handles[label] = legend_handle(label)
     finish_axis(ax, xlabel, title)
     return handles

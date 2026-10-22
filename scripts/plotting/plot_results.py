@@ -89,7 +89,9 @@ STYLE_EXTRA = {                      # baselines that are not part of the two fa
     'MuonBP (P=5)': {'color': '#e69500', 'marker': 'v'},
 }
 POINT_KW = dict(s=110, zorder=5, alpha=0.9, edgecolor='black', linewidth=0.5)
-ERR_KW = dict(zorder=4, capsize=3, linewidth=1)
+# error bars: black, as thin as the marker edge, and drawn above the markers, because the
+# seed spread is often smaller than the marker itself
+ERR_KW = dict(color='black', zorder=6, capsize=2, linewidth=0.5)
 LEGEND_KW = dict(loc='lower center', fontsize=9, frameon=False, bbox_to_anchor=(0.5, -0.02))
 LABEL_FS, TITLE_FS = 11, 12
 
