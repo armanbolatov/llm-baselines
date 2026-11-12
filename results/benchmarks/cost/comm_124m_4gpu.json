@@ -23,7 +23,7 @@
          "total_MB_per_step" : 268.512256
       },
       "dion_r2" : {
-         "_source" : "cost_bench.py --mode comm on opt2, 2026-09-24 10:31 UTC (rank min(m,n)/2); raw JSON comm_124m_4gpu_r2.json is on opt2",
+         "_source" : "cost_bench.py --mode comm on the H200 node, 2026-09-24 10:31 UTC (rank min(m,n)/2); raw JSON comm_124m_4gpu_r2.json is on the H200 node",
          "by_source" : {
             "optimizer:float32" : {
                "MB_per_step" : 382.4,

@@ -1,5 +1,5 @@
 {
- "val": "/home/shared/datasets/fineweb-100BT/val.bin",
+ "val": "<datasets>/fineweb-100BT/val.bin",
  "val_tokens": 10431174,
  "model": "gpt2",
  "runs": [

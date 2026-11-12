@@ -266,14 +266,113 @@ def run_time(args, out):
     return res if rank == 0 else None
 
 
+BREAK_METHODS = ["adamw", "muon", "lionmuon_p2", "lionmuon_p5"]
+PHASES = ["fwd_bwd_sync", "clip", "opt_step", "ns", "ar_wait", "update_allreduce"]
+
+
+def run_breakdown(args, out):
+    """Where the time of one step goes. Each phase is fenced by
+    torch.cuda.synchronize(): forward + backward with DDP's gradient sync (over --acc micro-batches,
+    no_sync for all but the last), gradient clipping, and the optimizer step. Inside the step,
+    Newton-Schulz calls on this rank's round-robin share are timed, and the update all-reduce is
+    split into the wait for the slowest rank (a barrier) and the transfer itself. The fences add a
+    little time, so totals are slightly above `--mode time`; compare components, not totals."""
+    import optim.lion_muon as lm_mod
+    rank, local, model, raw, x, y, ctx = setup_ddp(args)
+    opts = {m: build(m, raw) for m in BREAK_METHODS}
+    acc = args.acc
+    timers = {"ns": 0.0, "ar_wait": 0.0, "update_allreduce": 0.0}
+    real_ns, real_ar = lm_mod.zeropower_via_newtonschulz5, dist.all_reduce
+
+    def timed_ns(*a, **kw):
+        torch.cuda.synchronize()
+        t = time.perf_counter()
+        r = real_ns(*a, **kw)
+        torch.cuda.synchronize()
+        timers["ns"] += time.perf_counter() - t
+        return r
+
+    def timed_ar(tensor, *a, **kw):
+        torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        dist.barrier(device_ids=[local])
+        torch.cuda.synchronize()
+        t1 = time.perf_counter()
+        r = real_ar(tensor, *a, **kw)
+        torch.cuda.synchronize()
+        timers["ar_wait"] += t1 - t0
+        timers["update_allreduce"] += time.perf_counter() - t1
+        return r
+
+    lm_mod.zeropower_via_newtonschulz5 = timed_ns
+    dist.all_reduce = timed_ar
+
+    def one_step(m):
+        opt = opts[m]
+        for k in timers:
+            timers[k] = 0.0
+        torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        for i in range(acc):
+            with (model.no_sync() if i < acc - 1 else nullcontext()):
+                with ctx:
+                    loss = model(x, targets=y)["loss"] / acc
+                loss.backward()
+        torch.cuda.synchronize()
+        t1 = time.perf_counter()
+        torch.nn.utils.clip_grad_norm_(raw.parameters(), 0.5)
+        torch.cuda.synchronize()
+        t2 = time.perf_counter()
+        opt.step()
+        torch.cuda.synchronize()
+        t3 = time.perf_counter()
+        opt.zero_grad(set_to_none=True)
+        return [t1 - t0, t2 - t1, t3 - t2, timers["ns"], timers["ar_wait"], timers["update_allreduce"]]
+
+    def block(m):
+        dist.barrier(device_ids=[local])
+        v = torch.tensor([one_step(m) for _ in range(STEPS)], device="cuda").mean(0)
+        allv = [torch.zeros_like(v) for _ in range(dist.get_world_size())]
+        dist.all_gather(allv, v)
+        return torch.stack(allv).tolist()          # [rank][phase]
+
+    for _ in range(2):
+        for m in BREAK_METHODS:
+            block(m)
+    rows = []
+    for r in range(args.rounds):
+        order = BREAK_METHODS[:]
+        random.Random(2000 + r).shuffle(order)
+        rows.append({m: block(m) for m in order})
+    lm_mod.zeropower_via_newtonschulz5, dist.all_reduce = real_ns, real_ar
+    res = {"mode": "breakdown", "world_size": dist.get_world_size(), "global_batch": args.global_batch,
+           "seq_per_gpu": args.global_batch // dist.get_world_size(), "acc": acc, "steps_per_block": STEPS,
+           "rounds": args.rounds, "phases": PHASES, "summary": {}, "rounds_raw": rows}
+    for m in BREAK_METHODS:
+        s = {}
+        for j, ph in enumerate(PHASES):
+            per_round_max = [max(rk[j] for rk in row[m]) for row in rows]
+            per_round_mean = [st.mean(rk[j] for rk in row[m]) for row in rows]
+            s[ph] = {"rank_max_median": st.median(per_round_max), "rank_mean_median": st.median(per_round_mean)}
+        s["opt_rest"] = {"rank_max_median": st.median(
+            [max(rk[2] - rk[3] - rk[4] - rk[5] for rk in row[m]) for row in rows])}
+        res["summary"][m] = s
+        if rank == 0:
+            print(f"{m:<12} " + "  ".join(f"{ph} {s[ph]['rank_max_median'] * 1e3:7.2f}ms" for ph in PHASES)
+                  + f"  opt_rest {s['opt_rest']['rank_max_median'] * 1e3:7.2f}ms", flush=True)
+    return res if rank == 0 else None
+
+
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--mode", choices=["flops", "comm", "time"], required=True)
+    p.add_argument("--mode", choices=["flops", "comm", "time", "breakdown"], required=True)
     p.add_argument("--global_batch", type=int, default=32)
     p.add_argument("--rounds", type=int, default=30)
+    p.add_argument("--acc", type=int, default=1, help="breakdown: micro-batches per optimizer step")
     p.add_argument("--out", default=None)
     args = p.parse_args()
-    res = {"flops": run_flops, "comm": run_comm, "time": run_time}[args.mode](args, args.out)
+    res = {"flops": run_flops, "comm": run_comm, "time": run_time,
+           "breakdown": run_breakdown}[args.mode](args, args.out)
     if res is not None:
         res["host"] = os.uname().nodename
         res["gpu"] = torch.cuda.get_device_name(0)

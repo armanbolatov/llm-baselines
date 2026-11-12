@@ -4,6 +4,8 @@
 #   base   <ds> <scale>            AdamW over LRS
 #   seeds  <ds> <scale> "<seeds>"  grid winners, repeated
 #   extra  <ds> <scale>            Nesterov / Dion / MuonBP
+#   more   <ds> 124m "<seeds>"     Muon with Nesterov momentum, and the beta1 of LionMuon
+#   qwen   fineweb 124m "<seeds>"  the Qwen3-style decoder
 set -u
 cd "$(dirname "$0")/.."
 PY=${PY:-python}
@@ -106,7 +108,7 @@ seeds)   # columns: P eta_M alpha beta1 beta2 label
       run ${P}t_${lbl}_p${p} $p $mlr $sl $b1 $b2 $s
     done
   done ;;
-ablate)  # two reviewer questions at the tuned FineWeb rates: a random period with the same
+ablate)  # two ablations at the tuned FineWeb rates: a random period with the same
          # mean as the fixed one, and Lion instead of AdamW on the 1D parameters
   for s in $SEEDS; do
     run ${P}x_lionmuon_p2_randP  2 1e-3 1.00e-04 0.9 0.99 $s --muon_random_period
@@ -123,5 +125,70 @@ extra)
   $PY src/main.py $C --opt muonbp --muon_lr_factor 1e-3 --muonbp_blocks 4 \
     --muonbp_period 5 --muonbp_block_lr_ratio 1.0 \
     --seed 0 --experiment_name ${P}_muonbp_seed0 || echo "FAILED muonbp" ;;
+more)    # Muon with Nesterov momentum m, as LionMuon P=1 with betas (m, m) and --nesterov True.
+         # Columns: momentum eta_M. The rate is swept at 0.9 and 0.95, the other momenta use Muon's
+         # tuned rate. Seed 0 for every cell, seeds 1 and 2 for the best momentum. Muon and
+         # LionMuon P=2 at the tuned settings are rerun next to them, and on FineWeb the beta1 of
+         # LionMuon P=2 is swept as well. The other periods (P=3, P=10) use the grid mode, e.g.
+         #   GRID_ITERS=64000 GRID_WU=3000 PS=3 LRS=2e-3 ALPHAS=20 BETAS=0.9:0.99 GSEEDS="0 1 2" \
+         #     scripts/run_experiments.sh grid fineweb 124m
+  case $DS in
+  fineweb) MLR=1e-3; SL=1.00e-04; N="0.9 3e-4
+0.9 1e-3
+0.9 3e-3
+0.95 3e-4
+0.95 1e-3
+0.95 3e-3
+0.98 1e-3
+0.99 1e-3
+0.995 1e-3" ;;
+  wikitext) MLR=3e-3; SL=3.00e-04; N="0.9 1e-3
+0.9 3e-3
+0.9 1e-2
+0.95 1e-3
+0.95 3e-3
+0.95 1e-2
+0.98 3e-3
+0.99 3e-3" ;;
+  *) echo "more: fineweb or wikitext"; exit 1 ;;
+  esac
+  for s in $SEEDS; do
+    echo "$N" | while read m lr; do
+      run ${P}n_nest_m$(echo $m | tr -d .)_lr${lr} 1 $lr - $m $m $s --nesterov True
+    done
+    run ${P}n_muon_lr${MLR} 1 $MLR - 0.9 0.9 $s
+    run ${P}n_lmp2_ctrl_lr${MLR}_a10 2 $MLR $SL 0.9 0.99 $s
+    run ${P}n_lmp2_nest_lr${MLR}_a10 2 $MLR $SL 0.9 0.99 $s --nesterov True
+    if [ "$DS" = fineweb ]; then
+      for b in 0.95 0.98; do
+        run ${P}n_lmp2_b1-$(echo $b | tr -d .)_lr${MLR}_a10 2 $MLR $SL $b 0.99 $s
+      done
+    fi
+  done ;;
+qwen)    # Qwen3-style decoder of the same depth and width (src/models/qwen.py): RMSNorm,
+         # grouped-query attention with QK-norm, RoPE, SwiGLU. Every rate is swept on this model
+         # and eta_L stays at 1e-4, except in the last two lines, which move eta_L by one step.
+         # Seed 0 for every cell, seeds 1 and 2 for each method's best cell.
+  Q="--model qwen --rmsnorm_eps 1e-6 --n_kv_head 6 --rope_theta 1e6"
+  QLRS=${LRS:-"5e-4 1e-3 2e-3"}
+  for s in $SEEDS; do
+    for lr in $QLRS; do
+      echo "[$(date +%m-%d\ %H:%M)] qw124b_adamw_lr${lr}_seed${s}"
+      $PY src/main.py $C $Q --opt adamw --lr $lr --beta1 0.8 --beta2 0.999 --seed $s \
+        --experiment_name "qw124b_adamw_lr${lr}_seed${s}" || echo "FAILED adamw $lr"
+    done
+    $PY src/main.py $C $Q --opt adamw --lr 1e-3 --beta1 0.9 --beta2 0.95 --seed $s \
+      --experiment_name "qw124b_adamw_lr1e-3_b09-095_seed${s}" || echo "FAILED adamw 0.9/0.95"
+    for lr in 5e-4 1e-3 3e-3; do run qw124g_p1_lr${lr}_b09-09 1 $lr - 0.9 0.9 $s $Q; done
+    run qw124g_p2_lr1e-3_a10_b09-099  2 1e-3 1.00e-04 0.9 0.99 $s $Q
+    run qw124g_p2_lr2e-3_a20_b09-099  2 2e-3 1.00e-04 0.9 0.99 $s $Q
+    run qw124g_p2_lr3e-3_a30_b09-099  2 3e-3 1.00e-04 0.9 0.99 $s $Q
+    run qw124g_p5_lr1e-3_a10_b09-099  5 1e-3 1.00e-04 0.9 0.99 $s $Q
+    run qw124g_p5_lr3e-3_a30_b09-099  5 3e-3 1.00e-04 0.9 0.99 $s $Q
+    run qw124g_p5_lr1e-2_a100_b09-099 5 1e-2 1.00e-04 0.9 0.99 $s $Q
+    run qw124g_p2_lr3e-3_a30_b09-09   2 3e-3 1.00e-04 0.9 0.9  $s $Q
+    run qw124g_p2_lr2e-3_sl3e-5_b09-099 2 2e-3 3.00e-05 0.9 0.99 $s $Q
+    run qw124g_p2_lr2e-3_sl3e-4_b09-099 2 2e-3 3.00e-04 0.9 0.99 $s $Q
+  done ;;
 esac
 echo "[$(date +%m-%d\ %H:%M)] $MODE $DS $SCALE done"

@@ -1,0 +1,139 @@
+{
+ "PCIe|adamw": {
+  "vs_muon": 0.6931996319843386,
+  "vs_muon_ci95": [
+   0.6870388064889013,
+   0.7017278195544345
+  ],
+  "vs_adamw": 1.0,
+  "vs_adamw_ci95": [
+   0.9903846153846155,
+   1.0097087378640774
+  ],
+  "seeds_k": [
+   139,
+   138,
+   137
+  ]
+ },
+ "PCIe|lionmuon_p2": {
+  "vs_muon": 0.745707138171751,
+  "vs_muon_ci95": [
+   0.7422071427608564,
+   0.7520492808420465
+  ],
+  "vs_adamw": 1.0734029566841634,
+  "vs_adamw_ci95": [
+   1.0624260117772697,
+   1.0841409664791173
+  ],
+  "seeds_k": [
+   127,
+   126,
+   126
+  ]
+ },
+ "PCIe|lionmuon_p5": {
+  "vs_muon": 0.6931171090543626,
+  "vs_muon_ci95": [
+   0.6904568116358003,
+   0.700530795409684
+  ],
+  "vs_adamw": 1.0007734626067695,
+  "vs_adamw_ci95": [
+   0.9918102519646894,
+   1.0106714362755818
+  ],
+  "seeds_k": [
+   128,
+   128,
+   128
+  ]
+ },
+ "PCIe|muonbp_1e-3": {
+  "vs_muon": 0.8991556607085068,
+  "vs_muon_ci95": [
+   0.8810006610126826,
+   0.917781491703873
+  ],
+  "vs_adamw": 1.2943633864118926,
+  "vs_adamw_ci95": [
+   1.2674855305657684,
+   1.3220464173396955
+  ],
+  "seeds_k": [
+   146,
+   143,
+   140
+  ]
+ },
+ "NVLink|adamw": {
+  "vs_muon": 0.7839176919961208,
+  "vs_muon_ci95": [
+   0.74055826255626,
+   0.8332083616233642
+  ],
+  "vs_adamw": 1.0,
+  "vs_adamw_ci95": [
+   0.9903846153846155,
+   1.0097087378640774
+  ],
+  "seeds_k": [
+   139,
+   138,
+   137
+  ]
+ },
+ "NVLink|lionmuon_p2": {
+  "vs_muon": 0.7832268144533282,
+  "vs_muon_ci95": [
+   0.7582149628211217,
+   0.8123754773504258
+  ],
+  "vs_adamw": 0.9641059342084024,
+  "vs_adamw_ci95": [
+   0.9277987276423326,
+   1.0653880274277605
+  ],
+  "seeds_k": [
+   127,
+   126,
+   126
+  ]
+ },
+ "NVLink|lionmuon_p5": {
+  "vs_muon": 0.7640385650001985,
+  "vs_muon_ci95": [
+   0.6926836877312228,
+   0.7939584100330114
+  ],
+  "vs_adamw": 0.9865214033959478,
+  "vs_adamw_ci95": [
+   0.9300505505876931,
+   1.0447665524612424
+  ],
+  "seeds_k": [
+   128,
+   128,
+   128
+  ]
+ },
+ "NVLink|muonbp_1e-3": {
+  "vs_muon": 1.2033208215052855,
+  "vs_muon_ci95": [
+   1.1721584437398702,
+   1.2457298535946173
+  ],
+  "vs_adamw": 1.5386691878696954,
+  "vs_adamw_ci95": [
+   1.4743194208092611,
+   1.6595180812028607
+  ],
+  "seeds_k": [
+   146,
+   143,
+   140
+  ]
+ },
+ "_definition": "time to Muon's 3-seed mean minimum (3.415) relative to Muon (149k steps on its mean curve) and to AdamW; steps = mean of per-seed first evaluation at or below the target (steps_to_target_3seeds.json); step time = median over paired timing rounds of the method/reference ratio (time_124m_*.json); 95% CI by bootstrap, 4000 draws, rounds and seeds resampled independently; Muon's denominator held fixed"
+}

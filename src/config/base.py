@@ -102,7 +102,7 @@ def parse_args(base_parser, args, namespace):
     parser.add_argument("--max_precond_dim", default=10000, type=int)
     parser.add_argument("--merge_dims", default=False, type=bool)
     parser.add_argument("--precondition_1d", default=False, type=bool)
-    # Two reviewer questions, answered by ablation at 124M: a random period with the same mean
+    # Two ablations at 124M: a random period with the same mean
     # as the fixed one, and Lion instead of AdamW on the 1D parameters (lion_muon only).
     parser.add_argument("--muon_random_period", action="store_true")
     parser.add_argument("--one_d_lion", action="store_true")
@@ -199,8 +199,10 @@ def parse_args(base_parser, args, namespace):
         default="base",
         choices=[
             "base",
+            "qwen",  # Qwen3-style: RMSNorm, GQA + QK-norm, RoPE, SwiGLU, no biases (models/qwen.py)
         ],
     )
+    parser.add_argument("--rope_theta", default=1e6, type=float)  # qwen model only
     parser.add_argument("--parallel_block", action="store_true")
     parser.add_argument(
         "--use_pretrained", default="none", type=str

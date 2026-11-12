@@ -22,7 +22,7 @@ EBS=${EBS:-32}
 OUT=${OUT:-results/benchmarks/ddp_bench}
 mkdir -p "$OUT"
 
-C="--config_format base --dataset fineweb --datasets_dir ${DATASETS_DIR:-/home/shared/datasets} --model base
+C="--config_format base --dataset fineweb --datasets_dir ${DATASETS_DIR:-$HOME/datasets} --model base
  --distributed_backend nccl --batch_size $EBS --acc_steps 1 --sequence_length 512
  --n_layer 12 --n_head 12 --n_embd 768 --iterations $ITERS --warmup_steps 100 --scheduler cos
  --muon_ns_steps 5 --weight_decay 0.1 --grad_clip 0.5 --eval_interval 100000 --eval_batches 4

@@ -21,7 +21,7 @@ METHODS=${METHODS:-"adamw muon lionmuon_p5 lionmuon_p2"}
 LOGDIR=${LOGDIR:-logs_ddp124}        # per-method logs (round-robin appends)
 mkdir -p "$OUT" "$LOGDIR"
 
-C="--config_format base --dataset fineweb --datasets_dir ${DATASETS_DIR:-/home/shared/datasets} --model base
+C="--config_format base --dataset fineweb --datasets_dir ${DATASETS_DIR:-$HOME/datasets} --model base
  --distributed_backend nccl --batch_size 32 --acc_steps 1 --sequence_length 512
  --n_layer 12 --n_head 12 --n_embd 768 --iterations $ITERS --warmup_steps $WARMUP --scheduler cos
  --muon_ns_steps 5 --weight_decay 0.1 --grad_clip 0.5 --eval_interval 1000 --eval_batches 32

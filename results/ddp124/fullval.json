@@ -1,6 +1,6 @@
 {
   "_what": "Finished ddp124 runs re-scored on the held-out split with 8000 windows of 512 tokens (4.1M tokens), against the 256 windows (131k tokens) a training-time eval scores. Same model code and same loss computation (scripts/eval_val_anchor.py --model ckpt), so the two columns differ only in how much of the split they cover.",
-  "_where": "raw JSON on opt2 in results/ddp124_fullval/; run 2026-09-18 05:34 UTC",
+  "_where": "raw JSON on the H200 node in results/ddp124_fullval/; run 2026-09-18 05:34 UTC",
   "_why_partial": "only these runs still had a checkpoint; the five headline runs (adamw, muon, lionmuon_p2, lionmuon_p5, signmuon_p2) had theirs deleted, so they will be re-scored from seed 1 instead",
   "_finding": "the full split is harder by +0.008 for every finished run, a uniform shift, so the subset the paper quotes is representative and the margins between methods are unaffected",
   "runs": [

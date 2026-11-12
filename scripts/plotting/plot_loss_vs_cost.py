@@ -9,7 +9,7 @@ FLOPs (DDP_X=flops). All of these are counted, not estimated, and none depends o
 instead, which is an estimate: the training node is shared, so its own step times mostly measure
 the neighbours. Muon, Dion and MuonBP are drawn at their best LR.
 
-    python scripts/plotting/plot_loss_vs_cost.py scaling_opt.json scaling_opt2.json
+    python scripts/plotting/plot_loss_vs_cost.py scaling_a100.json scaling_h200.json
 
 Marker and colour come from plot_results.STYLE, so this matches the other figures.
 """

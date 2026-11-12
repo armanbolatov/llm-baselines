@@ -97,7 +97,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--model", choices=["gpt2", "ckpt"], default="gpt2")
     p.add_argument("--ckpt", default=None)
-    p.add_argument("--val", default="/home/shared/datasets/fineweb-100BT/val.bin")
+    p.add_argument("--val", default=os.path.expanduser("~/datasets/fineweb-100BT/val.bin"))
     p.add_argument("--batch", type=int, default=16)
     p.add_argument("--seqs", default="512,1024")
     p.add_argument("--windows", type=int, default=4000,

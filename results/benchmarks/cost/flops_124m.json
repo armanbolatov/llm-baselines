@@ -14,7 +14,7 @@
          "total_per_step" : 13360435298304
       },
       "dion_r2" : {
-         "_source" : "cost_bench.py --mode flops on opt2, 2026-09-24 10:31 UTC (rank min(m,n)/2); raw JSON flops_124m_r2.json is on opt2",
+         "_source" : "cost_bench.py --mode flops on the H200 node, 2026-09-24 10:31 UTC (rank min(m,n)/2); raw JSON flops_124m_r2.json is on the H200 node",
          "optimizer_per_step" : 261700000000,
          "total_per_step" : 13491000000000
       },
