@@ -32,53 +32,37 @@ Optional flags:
 - `--norm_diag_every_k 50` — record every 50 optimizer steps (default).
 - `--norm_diag_path /custom/path.json` — override location.
 
-### Headline FineWeb run (LionMuon $P=2$)
+### The runs of the paper
+
+`scripts/run_norm_diagnostics.sh` runs the 124M model (12 layers, width 768) for 10,000 steps
+with a record every 100 steps, on FineWeb and WikiText-103:
 
 ```bash
-conda activate optim
-cd llm-baselines/src
-python main.py \
-  --opt lion_muon --dataset fineweb --model base \
-  --muon_every_k 2 --muon_lr_factor 0.001 --sign_lr 5e-5 --lr 0.001 \
-  --beta1 0.9 --beta2 0.99 \
-  --batch_size 32 --sequence_length 512 \
-  --iterations 64000 --warmup_steps 3000 \
-  --muon_ns_steps 5 --weight_decay 0.1 --grad_clip 0.5 \
-  --exp_name fw_base_lionmuon_k2_normdiag \
-  --norm_diag --norm_diag_every_k 50
+bash scripts/run_norm_diagnostics.sh 0                       # LionMuon P=2: the constants table and the figure
+PERIODS="1 2 5 inf" bash scripts/run_norm_diagnostics.sh 0   # the comparison across periods (inf is pure Lion)
 ```
 
-### Headline WikiText-103 run (LionMuon $P=1$)
-
-```bash
-python main.py \
-  --opt lion_muon --dataset wikitext --model base \
-  --muon_every_k 1 --muon_lr_factor 7e-4 --lr 0.001 \
-  --beta1 0.9 --beta2 0.99 \
-  --batch_size 32 --sequence_length 512 \
-  --iterations 64000 --warmup_steps 3000 \
-  --muon_ns_steps 5 --weight_decay 0.1 --grad_clip 0.5 \
-  --exp_name wt_base_lionmuon_k1_normdiag \
-  --norm_diag --norm_diag_every_k 50
-```
-
-(64,000 steps × 50-step interval = 1,280 records per run, well under the file-size limit.)
+The two smoothness entries of a record are differences between this record and the previous
+one, so with `--norm_diag_every_k 100` they compare weights and gradients 100 steps apart.
+The records of the runs in the paper are in `results/additional/constants_124m/`.
 
 ---
 
-## How to plot
+## How to plot and tabulate
 
 ```bash
-cd <project root>
-python llm-baselines/scripts/plotting/plot_norm_diagnostics.py \
-  llm-baselines/exps/fw_base_lionmuon_k2_normdiag/norm_diag.json:FineWeb \
-  llm-baselines/exps/wt_base_lionmuon_k1_normdiag/norm_diag.json:WikiText-103 \
-  --out paper/figures/norm_diag.png \
-  --smooth_window 5
+D=results/additional/constants_124m
+python scripts/plotting/plot_norm_diagnostics.py \
+  $D/ndL12_fw_p2_seed0.norm_diag.json:FineWeb $D/ndL12_wt_p2_seed0.norm_diag.json:WikiText-103
+python scripts/plotting/constants_table.py --ref P=1 \
+  P=1=$D/ndL12_fw_p1_seed0.norm_diag.json P=2=$D/ndL12_fw_p2_seed0.norm_diag.json \
+  P=5=$D/ndL12_fw_p5_seed0.norm_diag.json Lion=$D/ndL12_fw_pinf_seed0.norm_diag.json
 ```
 
-The output PNG has 7 rows (one per ratio) × N columns (one per run).
-`--smooth_window K` applies a K-record running median per series; set to 1 to disable.
+The figure has one panel per constant with both datasets in it and is written to
+`results/figures/norm_diagnostics_124m.png` (set `OUT_PNG` for another path). The table has
+one row per run: the constants as means over the records, the two ratios of the same run, and
+with `--ref` the ratios against the reference run.
 
 ---
 
